@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v8.6</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v9.5</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <style>
-        /* 所有样式完全不变 */
         :root {
             --primary: #1a5c7a;
             --primary-light: #2c7da0;
@@ -645,7 +644,7 @@
             <div class="input-icon" id="pwd2Container" style="display:block;"><i class="fas fa-check-circle"></i><input type="password" id="authPassword2" placeholder="再次输入密码" autocomplete="off"></div>
             <button id="authSubmitBtn" style="background:#2c7da0;color:white;padding:12px;width:100%;margin-top:8px;font-weight:600;border-radius:40px;"><i class="fas fa-check-circle"></i> 确认并解锁</button>
             <div id="authError" class="error-msg"></div>
-            <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · 分片存储 · 安全加密 · 支持15W+条目</div>
+            <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · IndexedDB · 安全加密 · 支持15W+条目</div>
         </div>
     </div>
     <div class="app-container" id="mainApp" style="display:none;">
@@ -658,7 +657,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v8.6 · IndexedDB 增强</div>
+                <div class="version-corner">v9.5 · IndexedDB 修复版</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -808,35 +807,37 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v8.6 IndexedDB 增强版) ==========
+        // ========== 安全与存储核心 (v9.5 IndexedDB 修复版) ==========
         let cryptoKey = null,
             isAuthenticated = false,
             operationLogs = [];
-        const META_KEY = 'impa_security_meta_v86',
-            ENC_PREFIX = 'v1::';
+        const META_KEY = 'impa_security_meta_v95',
+            ENC_PREFIX = 'v2::'; // 更新前缀，避免与旧损坏数据冲突
         const CHUNK_SIZE = 5000;
         const secureStores = {
-            en: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'material_en' }),
-            zh: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'material_zh' }),
-            app: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'applications' })
+            en: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'material_en' }),
+            zh: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'material_zh' }),
+            app: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'applications' })
         };
 
-        function uint8ArrayToBase64(bytes, chunk = 4096) {
-            let result = '';
-            for (let i = 0; i < bytes.length; i += chunk) {
-                let chunkBytes = bytes.subarray(i, i + chunk);
-                let binaryString = '';
-                for (let j = 0; j < chunkBytes.length; j++) binaryString += String.fromCharCode(chunkBytes[j]);
-                result += btoa(binaryString);
+        // 完全修复的 Base64 编码：一次性构建二进制字符串，避免分片 btoa 产生非法 Base64
+        function uint8ArrayToBase64(bytes) {
+            const chunkSize = 8192;
+            let binaryString = '';
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                const chunk = bytes.subarray(i, i + chunkSize);
+                binaryString += String.fromCharCode.apply(null, chunk);
             }
-            return result;
+            return btoa(binaryString);
         }
 
         function base64ToUint8Array(base64String) {
-            let binaryString = atob(base64String);
-            let length = binaryString.length;
-            let uint8Array = new Uint8Array(length);
-            for (let i = 0; i < length; i++) uint8Array[i] = binaryString.charCodeAt(i);
+            const binaryString = atob(base64String);
+            const len = binaryString.length;
+            const uint8Array = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                uint8Array[i] = binaryString.charCodeAt(i);
+            }
             return uint8Array;
         }
 
@@ -882,7 +883,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v8.6 IndexedDB 稳定版");
+            addLog("系统初始化", "v9.5 IndexedDB 修复版");
             return true;
         }
 
@@ -901,7 +902,6 @@
             return true;
         }
 
-        // 纯粹的 IndexedDB 存储，移除 localStorage 备份
         async function saveChunkedData(storeName, fullArray) {
             const allKeys = await secureStores[storeName].keys();
             const oldChunkKeys = allKeys.filter(key => key.startsWith('chunk_'));
@@ -938,19 +938,29 @@
 
         async function loadChunkedData(storeName) {
             const meta = await secureGetItem(storeName, 'meta', null);
-            const chunkKeys = (await secureStores[storeName].keys()).filter(key => key.startsWith('chunk_')).sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
+            let chunkKeys;
+            try {
+                const allKeys = await secureStores[storeName].keys();
+                chunkKeys = allKeys.filter(key => key.startsWith('chunk_')).sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
+            } catch (e) {
+                console.error(`获取 ${storeName} 键列表失败:`, e);
+                return [];
+            }
 
             if (!meta && chunkKeys.length === 0) return [];
 
-            // 从实际分片重建
             let result = [];
             for (let key of chunkKeys) {
                 const chunk = await secureGetItem(storeName, key, null);
-                if (chunk) result = result.concat(chunk);
-                else console.warn(`缺失分片 ${storeName} ${key}`);
+                if (chunk) {
+                    result = result.concat(chunk);
+                }
             }
 
-            // 如果 meta 信息与实际条目不符，更新 meta
+            if (result.length === 0 && chunkKeys.length > 0) {
+                console.error(`严重警告：${storeName} 所有分片解密均失败，可能密钥不匹配。`);
+            }
+
             if (meta && result.length !== meta.total) {
                 await secureSetItem(storeName, 'meta', { chunkCount: chunkKeys.length, total: result.length });
             } else if (!meta && result.length > 0) {
@@ -961,14 +971,18 @@
         }
 
         async function secureSetItem(store, key, value) {
-            // 仅使用 IndexedDB，不再写入 localStorage
             await secureStores[store].setItem(key, await encryptData(JSON.stringify(value)));
         }
 
         async function secureGetItem(store, key, defaultValue = null) {
             const encryptedData = await secureStores[store].getItem(key);
             if (!encryptedData) return defaultValue;
-            try { return JSON.parse(await decryptData(encryptedData)); } catch (e) { return defaultValue; }
+            try {
+                return JSON.parse(await decryptData(encryptedData));
+            } catch (e) {
+                console.error(`[解密失败] 存储:${store}, 键:${key}, 错误:`, e.message);
+                return defaultValue;
+            }
         }
 
         async function loadAllSecureData() {
@@ -990,10 +1004,9 @@
             if (cryptoKey) {
                 (async () => {
                     try {
-                        // 日志体积小，保留在 localStorage 以便快速访问
                         localStorage.setItem('impa_audit_logs', await encryptData(JSON.stringify(operationLogs.slice(0, 300))));
                     } catch (e) {
-                        console.warn('审计日志写入失败，可能配额不足');
+                        console.warn('审计日志写入 localStorage 失败');
                     }
                 })();
             }
@@ -1109,7 +1122,7 @@
             else materialDataZh = data;
             await saveChunkedData(language, data);
             addLog("物料库变更", `${language==='en'?'英文':'中文'}库 ${data.length}条`);
-            console.log(`物料库 ${language} 保存完成，${data.length} 条`);
+            console.log(`物料库 ${language} 保存完成，共 ${data.length} 条`);
         }
 
         function updateLibraryCountDisplay() { currentLibraryCountSpan.innerText = `${getCurrentMaterialArray().length} 条`; }
@@ -1137,7 +1150,6 @@
                 performMaterialSearch();
                 updateLibraryCountDisplay();
                 alert(`物料库已刷新：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
-                console.log(`手动重载：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
                 addLog("手动重载物料库", `英文${materialDataEn.length} 中文${materialDataZh.length}`);
             } catch (e) {
                 alert("重载失败，请检查浏览器控制台错误信息。");
@@ -1832,7 +1844,7 @@
             materialDataEn = ensureRemarkField(en);
             materialDataZh = ensureRemarkField(zh);
             console.log(`物料库加载完成：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
-            autoSaveSpan.innerHTML += ' <span style="color:#2e7d5b;">✅ IndexedDB 存储就绪</span>';
+            autoSaveSpan.innerHTML += ' <span style="color:#2e7d5b;">✅ IndexedDB 就绪</span>';
             bindEvents();
             initMaterialEventDelegation();
             initQuickAddDelegation();
@@ -1842,8 +1854,7 @@
             let lastReqNo = localStorage.getItem('ui_lastReqNo');
             if (lastReqNo && await secureGetItem('app', lastReqNo, null)) await loadApplication(lastReqNo);
             else {
-                let now = new Date();
-                let localDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                let localDate = getLocalDatetimeString().split('T')[0];
                 let demoNo = `REQ-${localDate}`;
                 reqSerialInput.value = demoNo;
                 applicantInput.value = "2/O";
