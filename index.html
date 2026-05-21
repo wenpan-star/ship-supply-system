@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v9.5</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v9.7</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js">
+    </script>
     <style>
         :root {
             --primary: #1a5c7a;
@@ -303,6 +305,7 @@
             font-weight: 500;
         }
 
+        /* 滚动容器，表头固定需要配合 sticky */
         .material-table-wrapper,
         .table-wrapper {
             overflow-x: auto;
@@ -313,13 +316,17 @@
             background: #fff;
             scroll-behavior: smooth;
         }
+
+        /* 表格改为 separate，sticky 才能生效 */
         .req-table,
         .material-search-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.78rem;
             min-width: 860px;
         }
+
         .req-table th,
         .req-table td,
         .material-search-table th,
@@ -328,11 +335,15 @@
             border-bottom: 1px solid #eef3f7;
             vertical-align: middle;
             text-align: left;
+            background: #fff; /* 单元格背景保持白色，防止透出下层 */
         }
+
         .req-table tr:hover td,
         .material-search-table tr:hover td {
             background: #f9fcfd;
         }
+
+        /* 表头固定样式：真正粘滞 */
         .req-table th,
         .material-search-table th {
             background: #f7fafc;
@@ -344,13 +355,15 @@
             font-size: 0.74rem;
             text-transform: uppercase;
             letter-spacing: 0.4px;
-            z-index: 1;
+            z-index: 3;
         }
+
         .sort-indicator {
             margin-left: 4px;
             font-size: 0.6rem;
             opacity: 0.7;
         }
+
         .resize-handle {
             position: absolute;
             right: 0;
@@ -418,6 +431,8 @@
         .quick-results table {
             width: 100%;
             font-size: 0.76rem;
+            border-collapse: separate;
+            border-spacing: 0;
         }
         .quick-results th {
             background: #f7fafc;
@@ -433,6 +448,7 @@
         .quick-results td {
             padding: 7px 10px;
             border-bottom: 1px solid #f0f4f7;
+            background: #fff;
         }
         .quick-results tr:hover td {
             background: #f9fdfe;
@@ -577,12 +593,14 @@
         }
         .inline-edit {
             cursor: pointer;
-            border-bottom: 1px dashed #90b8cf;
+            border-bottom: none;
             transition: var(--transition);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .inline-edit:hover {
             color: var(--primary);
-            border-bottom-color: var(--primary);
         }
         .req-search-bar {
             display: flex;
@@ -657,7 +675,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v9.5 · IndexedDB 修复版</div>
+                <div class="version-corner">v9.7 · 表头固定修复</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -714,7 +732,7 @@
                                 <option value="all">全部字段</option>
                                 <option value="impa">IMPA</option>
                                 <option value="description">物料描述</option>
-                            </select></div>
+                            </select><button id="resetAddOrderBtn" class="outline" title="按默认添加顺序排列（最新最上）"><i class="fas fa-sort-amount-down-alt"></i> ↕ 添加顺序</button></div>
                     </div><button id="clearSearchBtn" class="outline"><i class="fas fa-times"></i> 清除</button><button id="batchDeleteReqBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> 删除选中</button>
                 </div>
                 <div class="table-wrapper">
@@ -807,20 +825,20 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v9.5 IndexedDB 修复版) ==========
+        // ========== 安全与存储核心 (v9.7 表头修复版，存储结构不变) ==========
         let cryptoKey = null,
             isAuthenticated = false,
             operationLogs = [];
-        const META_KEY = 'impa_security_meta_v95',
-            ENC_PREFIX = 'v2::'; // 更新前缀，避免与旧损坏数据冲突
+        const META_KEY = 'impa_security_meta_v96', // 保持不变，兼容旧数据
+            ENC_PREFIX = 'v3::'; // 保持不变
         const CHUNK_SIZE = 5000;
         const secureStores = {
-            en: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'material_en' }),
-            zh: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'material_zh' }),
-            app: localforage.createInstance({ name: 'IMPA_SecureDB_v95', storeName: 'applications' })
+            en: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'material_en' }),
+            zh: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'material_zh' }),
+            app: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'applications' })
         };
 
-        // 完全修复的 Base64 编码：一次性构建二进制字符串，避免分片 btoa 产生非法 Base64
+        // Base64 编解码
         function uint8ArrayToBase64(bytes) {
             const chunkSize = 8192;
             let binaryString = '';
@@ -877,13 +895,13 @@
             const salt = crypto.getRandomValues(new Uint8Array(16));
             const key = await deriveKeyFromPassword(password, salt);
             const authHash = await computeAuthHash(password, salt);
-            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...salt)), authHash, version: 6 }));
+            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...salt)), authHash, version: 7 }));
             cryptoKey = key;
             isAuthenticated = true;
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v9.5 IndexedDB 修复版");
+            addLog("系统初始化", "v9.7 表头固定修复版");
             return true;
         }
 
@@ -1030,7 +1048,7 @@
             let newSalt = crypto.getRandomValues(new Uint8Array(16));
             let newKey = await deriveKeyFromPassword(newPassword, newSalt);
             let newAuthHash = await computeAuthHash(newPassword, newSalt);
-            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newAuthHash, version: 6 }));
+            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newAuthHash, version: 7 }));
             cryptoKey = newKey;
             await saveChunkedData('en', en);
             await saveChunkedData('zh', zh);
@@ -1055,6 +1073,7 @@
             quickSearchDebounce = null,
             reqSortField = null,
             reqSortAsc = true,
+            reqDefaultOrder = 'reverse',
             reqColumnWidths = [32, 40, 100, 180, 150, 80, 100, 100, 120, 60],
             materialColumnWidths = [50, 120, 200, 180, 80, 150, 60],
             currentLang = 'zh';
@@ -1092,6 +1111,7 @@
             newRemark = document.getElementById('newRemark'),
             searchFieldSelect = document.getElementById('searchFieldSelect'),
             reqSearchFieldSelect = document.getElementById('reqSearchFieldSelect'),
+            resetAddOrderBtn = document.getElementById('resetAddOrderBtn'),
             quickSearchInput = document.getElementById('quickSearchInput'),
             quickSearchResultsDiv = document.getElementById('quickSearchResults'),
             quickSearchTbody = document.getElementById('quickSearchTbody'),
@@ -1194,7 +1214,7 @@
             let html = '';
             pageData.forEach((item, idx) => {
                 let serial = start + idx + 1;
-                html += `<tr data-impa="${escapeHtml(item.impa)}"><td>${serial}</td><td>${escapeHtml(item.impa)}</td><td><div class="inline-edit" data-field="description" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.description)}</div></td><td><div class="inline-edit" data-field="specification" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.specification||'')}</div></td><td><div class="inline-edit" data-field="unit" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.unit||'')}</div></td><td><div class="inline-edit" data-field="remark" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.remark||'')}</div></td><td><button class="delete-material" data-impa="${escapeHtml(item.impa)}"><i class="far fa-trash-alt"></i></button></td></tr>`;
+                html += `<tr data-impa="${escapeHtml(item.impa)}"><td>${serial}</td><td>${escapeHtml(item.impa)}</td><td><div class="inline-edit" data-field="description" data-impa="${escapeHtml(item.impa)}" title="${escapeHtml(item.description)}">${escapeHtml(item.description)}</div></td><td><div class="inline-edit" data-field="specification" data-impa="${escapeHtml(item.impa)}" title="${escapeHtml(item.specification||'')}">${escapeHtml(item.specification||'')}</div></td><td><div class="inline-edit" data-field="unit" data-impa="${escapeHtml(item.impa)}" title="${escapeHtml(item.unit||'')}">${escapeHtml(item.unit||'')}</div></td><td><div class="inline-edit" data-field="remark" data-impa="${escapeHtml(item.impa)}" title="${escapeHtml(item.remark||'')}">${escapeHtml(item.remark||'')}</div></td><td><button class="delete-material" data-impa="${escapeHtml(item.impa)}"><i class="far fa-trash-alt"></i></button></td></tr>`;
             });
             materialSearchBody.innerHTML = html;
             initResizeHandlers('materialSearchTable', false);
@@ -1217,13 +1237,15 @@
 
         function renderRequestTable() {
             let allItems = currentApplication.items;
-            let filtered = reqFilterKeyword.trim() ? allItems.filter(item => {
+            let orderedItems = reqDefaultOrder === 'reverse' ? allItems.slice().reverse() : allItems.slice();
+
+            let filtered = reqFilterKeyword.trim() ? orderedItems.filter(item => {
                 let keyword = reqFilterKeyword.toLowerCase(),
                     field = reqSearchField;
                 if (field === 'impa') return item.impa.toLowerCase().includes(keyword);
                 if (field === 'description') return item.description.toLowerCase().includes(keyword);
                 return item.impa.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword);
-            }) : allItems.slice();
+            }) : orderedItems.slice();
 
             if (reqSortField) {
                 const fieldMap = {
@@ -1263,7 +1285,7 @@
 
             let html = '';
             filtered.forEach((item, displayIndex) => {
-                let originalIndex = allItems.findIndex(i => i === item);
+                let originalIndex = allItems.indexOf(item);
                 let manualStock = item.manualStock ?? 0;
                 html += `<tr data-original-idx="${originalIndex}"><td class="checkbox-col"><input type="checkbox" class="req-item-checkbox" data-original-idx="${originalIndex}"></td><td>${displayIndex+1}</td><td>${escapeHtml(item.impa)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.spec||'-')}</td><td>${escapeHtml(item.unit||'-')}</td><td><input type="number" class="stock-manual-input" value="${manualStock}" step="any" min="0" data-original-idx="${originalIndex}" style="width:90px;"></td><td><input type="number" class="qty-input" value="${item.quantity||1}" min="0" step="any" data-original-idx="${originalIndex}" style="width:80px;"></td><td><input type="text" class="remark-input" placeholder="备注" value="${escapeHtml(item.remark||'')}" data-original-idx="${originalIndex}" maxlength="200"></td><td><button class="delete-item" data-original-idx="${originalIndex}"><i class="far fa-trash-alt"></i></button></td></tr>`;
             });
@@ -1404,6 +1426,14 @@
             else { reqSortField = field; reqSortAsc = true; }
             updateReqSortIndicators();
             if (!skip) renderRequestTable();
+            saveUISettings();
+        }
+
+        function resetToAddOrder() {
+            reqSortField = null;
+            reqDefaultOrder = 'reverse';
+            updateReqSortIndicators();
+            renderRequestTable();
             saveUISettings();
         }
 
@@ -1687,6 +1717,7 @@
             localStorage.setItem('ui_currentLang', currentLang);
             localStorage.setItem('ui_reqSortField', reqSortField || '');
             localStorage.setItem('ui_reqSortAsc', reqSortAsc);
+            localStorage.setItem('ui_reqDefaultOrder', reqDefaultOrder);
             localStorage.setItem('ui_reqSearchKeyword', reqSearchKeyword.value || '');
             localStorage.setItem('ui_reqSearchField', reqSearchFieldSelect.value);
             localStorage.setItem('ui_materialSearchKeyword', searchKeyword.value || '');
@@ -1703,7 +1734,9 @@
             let savedLang = localStorage.getItem('ui_currentLang');
             if (savedLang === 'en' || savedLang === 'zh') { currentLang = savedLang; updateLibraryUI(); }
             let savedSortField = localStorage.getItem('ui_reqSortField');
-            if (savedSortField) { reqSortField = savedSortField; reqSortAsc = localStorage.getItem('ui_reqSortAsc') === 'true'; updateReqSortIndicators(); if (reqSortField) sortReqItems(reqSortField, true); }
+            if (savedSortField) { reqSortField = savedSortField; reqSortAsc = localStorage.getItem('ui_reqSortAsc') === 'true'; updateReqSortIndicators(); }
+            let savedDefaultOrder = localStorage.getItem('ui_reqDefaultOrder');
+            if (savedDefaultOrder === 'reverse' || savedDefaultOrder === 'normal') reqDefaultOrder = savedDefaultOrder;
             reqSearchKeyword.value = localStorage.getItem('ui_reqSearchKeyword') || '';
             reqSearchFieldSelect.value = localStorage.getItem('ui_reqSearchField') || 'all';
             searchKeyword.value = localStorage.getItem('ui_materialSearchKeyword') || '';
@@ -1755,6 +1788,7 @@
             searchKeyword.oninput = () => { clearTimeout(searchDebounceTimer); searchDebounceTimer = setTimeout(() => performMaterialSearch(), 300); };
             searchFieldSelect.onchange = () => performMaterialSearch();
             reqSearchFieldSelect.onchange = filterRequestTable;
+            resetAddOrderBtn.onclick = resetToAddOrder;
             reqSerialInput.onchange = applicantInput.onchange = applyTimeInput.onchange = syncFormToApplication;
             toggleLangBtn.onclick = () => { currentLang = currentLang === 'en' ? 'zh' : 'en'; updateLibraryUI(); };
             refreshHistoryBtn.onclick = refreshHistoryList;
