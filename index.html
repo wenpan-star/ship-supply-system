@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v8.6</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v9.3</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js">
-    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <style>
         :root {
             --primary: #1a5c7a;
@@ -37,603 +35,88 @@
             --font-stack: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', sans-serif;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background: var(--bg);
-            font-family: var(--font-stack);
-            padding: 20px 24px;
-            color: var(--text);
-            line-height: 1.5;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 8px 10px;
-            }
-            input,
-            select,
-            button,
-            textarea {
-                font-size: 14px !important;
-            }
-        }
-
-        button,
-        .add-btn,
-        .delete-item,
-        .delete-inv,
-        .icon-btn {
-            cursor: pointer;
-            transition: var(--transition);
-            border-radius: var(--radius-xl);
-            font-weight: 500;
-            border: none;
-            background: transparent;
-            font-family: var(--font-stack);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-        button:active {
-            transform: scale(0.96);
-        }
-        button:hover {
-            filter: brightness(0.94);
-            box-shadow: var(--shadow-md);
-            transform: translateY(-1px);
-        }
-        button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            filter: none;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .app-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            padding: 1.2rem 1.5rem;
-            border: 1px solid var(--card-border);
-            transition: box-shadow var(--transition);
-        }
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-        }
-        @media (max-width: 768px) {
-            .card {
-                padding: 0.8rem 0.9rem;
-                border-radius: var(--radius);
-            }
-        }
-
-        .card-header {
-            font-weight: 700;
-            font-size: 1.15rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 6px 0 10px 16px;
-            border-left: 5px solid var(--primary-light);
-            background: linear-gradient(90deg, #f7fafd 0%, transparent 100%);
-            letter-spacing: -0.2px;
-            color: var(--primary);
-        }
-        .card-header i {
-            color: var(--primary-light);
-            margin-right: 4px;
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            border-radius: var(--radius-xl);
-            padding: 7px 20px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--card-border);
-            position: sticky;
-            top: 10px;
-            z-index: 100;
-            backdrop-filter: blur(6px);
-        }
-        .tab-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            background: transparent;
-            border: 2px solid transparent;
-            font-size: 0.88rem;
-            font-weight: 600;
-            padding: 9px 22px;
-            border-radius: var(--radius-xl);
-            color: var(--text-secondary);
-            transition: var(--transition);
-            letter-spacing: 0.2px;
-        }
-        .tab-btn.active {
-            background: var(--primary-light);
-            color: #fff;
-            box-shadow: 0 6px 16px rgba(44, 125, 160, 0.28);
-            border-color: transparent;
-        }
-        .tab-btn:hover:not(.active) {
-            background: var(--primary-soft);
-            color: var(--primary);
-            border-color: #c8dbe8;
-        }
-
-        .version-corner {
-            font-size: 0.68rem;
-            background: var(--primary-soft);
-            padding: 6px 16px;
-            border-radius: var(--radius-xl);
-            font-weight: 600;
-            border: 1px solid #c8d8e5;
-            color: var(--primary);
-            letter-spacing: 0.3px;
-        }
-
-        .tab-pane {
-            display: none;
-            animation: fadeSlideIn 0.3s ease;
-        }
-        .tab-pane.active-pane {
-            display: block;
-        }
-        @keyframes fadeSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .flex-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: flex-end;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            min-width: 130px;
-            flex: 1 1 auto;
-        }
-        .form-group label {
-            font-size: 0.66rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            color: var(--primary-light);
-            margin-bottom: 1px;
-        }
-        input,
-        select,
-        textarea {
-            border-radius: var(--radius-xl);
-            padding: 9px 16px;
-            border: 1.5px solid #d5e2ec;
-            font-size: 0.84rem;
-            background: #fafcfd;
-            transition: var(--transition);
-            outline: none;
-            font-family: var(--font-stack);
-            color: var(--text);
-        }
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: var(--primary-light);
-            box-shadow: 0 0 0 4px rgba(44, 125, 160, 0.08);
-            background: #fff;
-        }
-        button.primary {
-            background: var(--primary-light);
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(44, 125, 160, 0.2);
-            padding: 9px 20px;
-            font-weight: 600;
-        }
-        button.success {
-            background: var(--success);
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(46, 125, 91, 0.18);
-            padding: 9px 20px;
-            font-weight: 600;
-        }
-        button.outline {
-            background: #fff;
-            border: 1.5px solid #c8d8e5;
-            color: var(--text-secondary);
-            padding: 9px 18px;
-            font-weight: 500;
-        }
-        button.outline:hover {
-            border-color: var(--primary-light);
-            color: var(--primary);
-            background: #fafdfe;
-        }
-        .danger-btn {
-            background: var(--danger-soft);
-            border: 1.5px solid #f0c4bd;
-            color: var(--danger);
-            padding: 9px 18px;
-            font-weight: 500;
-        }
-        .danger-btn:hover {
-            background: #fef0ee;
-            border-color: #e8a89e;
-        }
-        .warning-btn {
-            background: var(--accent-light);
-            border: 1.5px solid #f5d090;
-            color: #b45f06;
-            padding: 9px 18px;
-            font-weight: 500;
-        }
-
-        .material-table-wrapper,
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: var(--radius);
-            max-height: 580px;
-            overflow-y: auto;
-            border: 1px solid #e8eef3;
-            background: #fff;
-            scroll-behavior: smooth;
-        }
-        .req-table,
-        .material-search-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.78rem;
-            min-width: 860px;
-        }
-        .req-table th,
-        .req-table td,
-        .material-search-table th,
-        .material-search-table td {
-            padding: 10px 7px;
-            border-bottom: 1px solid #eef3f7;
-            vertical-align: middle;
-            text-align: left;
-        }
-        .req-table tr:hover td,
-        .material-search-table tr:hover td {
-            background: #f9fcfd;
-        }
-        .req-table th,
-        .material-search-table th {
-            background: #f7fafc;
-            font-weight: 700;
-            color: #1a3d52;
-            position: sticky;
-            top: 0;
-            border-bottom: 2px solid #dce8f0;
-            font-size: 0.74rem;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-            z-index: 1;
-        }
-        .sort-indicator {
-            margin-left: 4px;
-            font-size: 0.6rem;
-            opacity: 0.7;
-        }
-        .resize-handle {
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 7px;
-            height: 100%;
-            cursor: col-resize;
-            background: transparent;
-            z-index: 10;
-            border-radius: 0 4px 4px 0;
-        }
-        .resize-handle:hover {
-            background: var(--primary-light);
-            opacity: 0.25;
-        }
-
-        .qty-input,
-        .stock-manual-input,
-        .remark-input {
-            width: 100%;
-            text-align: center;
-            padding: 7px 6px;
-            border-radius: var(--radius-sm);
-            font-size: 0.76rem;
-            border: 1.5px solid #e4ecf2;
-        }
-        .delete-item {
-            font-size: 1.1rem;
-            opacity: 0.5;
-            padding: 4px 8px;
-        }
-        .delete-item:hover {
-            opacity: 1;
-            color: #e74c3c;
-            background: #fef5f4;
-            border-radius: 50%;
-        }
-
-        .status-bar {
-            font-size: 0.68rem;
-            background: #eef4f8;
-            padding: 7px 18px;
-            border-radius: var(--radius-xl);
-            display: inline-block;
-            margin-top: 10px;
-            color: var(--primary-light);
-            font-weight: 500;
-            letter-spacing: 0.2px;
-        }
-        .quick-add-area {
-            background: #fafdfe;
-            border-radius: var(--radius);
-            padding: 14px 18px;
-            margin-bottom: 18px;
-            border: 1px solid #e4edf3;
-        }
-        .quick-results {
-            max-height: 260px;
-            overflow-y: auto;
-            margin-top: 12px;
-            border-radius: var(--radius);
-            background: #fff;
-            border: 1px solid #e4eef5;
-        }
-        .quick-results table {
-            width: 100%;
-            font-size: 0.76rem;
-        }
-        .quick-results th {
-            background: #f7fafc;
-            padding: 8px 10px;
-            font-weight: 700;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-bottom: 2px solid #dce8f0;
-            position: sticky;
-            top: 0;
-        }
-        .quick-results td {
-            padding: 7px 10px;
-            border-bottom: 1px solid #f0f4f7;
-        }
-        .quick-results tr:hover td {
-            background: #f9fdfe;
-        }
-        .add-quick-btn {
-            background: var(--primary-soft);
-            color: var(--primary);
-            padding: 5px 14px;
-            border-radius: var(--radius-xl);
-            font-size: 0.72rem;
-            font-weight: 600;
-            border: 1px solid #c8dbe8;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .add-quick-btn:hover {
-            background: var(--primary-light);
-            color: #fff;
-            border-color: var(--primary-light);
-            box-shadow: var(--shadow-sm);
-        }
-        .batch-area {
-            background: #fbfeff;
-            border-radius: var(--radius);
-            margin-bottom: 16px;
-            border: 1px solid #e4edf3;
-            padding: 16px 18px;
-        }
-        .batch-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-            align-items: end;
-        }
-        .batch-import-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 12px;
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid #e4edf3;
-        }
-        .pagination-bar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            gap: 10px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        .pagination-bar button {
-            background: #fff;
-            border: 1px solid #d5e2ec;
-            border-radius: var(--radius-xl);
-            padding: 6px 14px;
-            font-size: 0.74rem;
-            color: var(--text-secondary);
-        }
-        .pagination-bar button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-        .library-count-badge {
-            background: #eef3f7;
-            border-radius: var(--radius-xl);
-            padding: 5px 16px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--primary-light);
-            border: 1px solid #dce6ed;
-        }
-        .btn-icon-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(16px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-        .auth-card {
-            background: #fff;
-            border-radius: var(--radius-lg);
-            padding: 2rem 2rem 2.2rem;
-            width: 90%;
-            max-width: 420px;
-            box-shadow: 0 40px 60px -20px rgba(0, 0, 0, 0.4);
-            text-align: center;
-        }
-        .auth-card h2 {
-            font-weight: 700;
-            margin: 0.8rem 0 0.5rem;
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-        .auth-card i.fa-ship {
-            font-size: 3rem;
-            color: var(--primary-light);
-            margin-bottom: 0.4rem;
-        }
-        .progress-bar-container {
-            background: #e0eaf1;
-            border-radius: 24px;
-            height: 8px;
-            margin-top: 6px;
-            overflow: hidden;
-            width: 100%;
-        }
-        .progress-bar-fill {
-            background: var(--primary-light);
-            width: 0%;
-            height: 100%;
-            transition: width 0.2s;
-        }
-        .lang-toggle-btn {
-            min-width: 80px;
-            justify-content: center;
-            gap: 6px;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #eef3f7;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c5d9e8;
-            border-radius: 10px;
-        }
-        .inline-edit {
-            cursor: pointer;
-            border-bottom: 1px dashed #90b8cf;
-            transition: var(--transition);
-        }
-        .inline-edit:hover {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        .req-search-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: flex-end;
-            margin-bottom: 14px;
-        }
-        .req-search-bar .form-group {
-            flex: 2;
-            min-width: 200px;
-        }
-        .delete-material {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #b0c4de;
-            transition: var(--transition);
-            font-size: 1rem;
-            padding: 4px 8px;
-            border-radius: 50%;
-        }
-        .delete-material:hover {
-            color: #e74c3c;
-            background: #fef5f4;
-        }
-        .input-icon {
-            position: relative;
-            margin: 12px 0 8px;
-        }
-        .input-icon i {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #90b8cf;
-            font-size: 1rem;
-            pointer-events: none;
-        }
-        .input-icon input {
-            width: 100%;
-            padding-left: 42px;
-            margin: 0;
-        }
-        .error-msg {
-            color: #c0392b;
-            margin-top: 12px;
-            font-size: 0.85rem;
-        }
+        * { box-sizing: border-box; margin: 0; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); font-family: var(--font-stack); padding: 20px 24px; color: var(--text); line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        @media (max-width: 768px) { body { padding: 8px 10px; } input,select,button,textarea { font-size: 14px !important; } }
+        button, .add-btn, .delete-item, .delete-inv, .icon-btn { cursor: pointer; transition: var(--transition); border-radius: var(--radius-xl); font-weight: 500; border: none; background: transparent; font-family: var(--font-stack); display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+        button:active { transform: scale(0.96); }
+        button:hover { filter: brightness(0.94); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; transform: none; box-shadow: none; }
+        .app-container { max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+        .card { background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 1.2rem 1.5rem; border: 1px solid var(--card-border); transition: box-shadow var(--transition); }
+        .card:hover { box-shadow: var(--shadow-lg); }
+        @media (max-width: 768px) { .card { padding: 0.8rem 0.9rem; border-radius: var(--radius); } }
+        .card-header { font-weight: 700; font-size: 1.15rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 6px 0 10px 16px; border-left: 5px solid var(--primary-light); background: linear-gradient(90deg, #f7fafd 0%, transparent 100%); letter-spacing: -0.2px; color: var(--primary); }
+        .card-header i { color: var(--primary-light); margin-right: 4px; }
+        .nav-tabs { display: flex; gap: 14px; flex-wrap: wrap; justify-content: space-between; align-items: center; background: var(--card-bg); border-radius: var(--radius-xl); padding: 7px 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--card-border); position: sticky; top: 10px; z-index: 100; backdrop-filter: blur(6px); }
+        .tab-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .tab-btn { background: transparent; border: 2px solid transparent; font-size: 0.88rem; font-weight: 600; padding: 9px 22px; border-radius: var(--radius-xl); color: var(--text-secondary); transition: var(--transition); letter-spacing: 0.2px; }
+        .tab-btn.active { background: var(--primary-light); color: #fff; box-shadow: 0 6px 16px rgba(44, 125, 160, 0.28); border-color: transparent; }
+        .tab-btn:hover:not(.active) { background: var(--primary-soft); color: var(--primary); border-color: #c8dbe8; }
+        .version-corner { font-size: 0.68rem; background: var(--primary-soft); padding: 6px 16px; border-radius: var(--radius-xl); font-weight: 600; border: 1px solid #c8d8e5; color: var(--primary); letter-spacing: 0.3px; }
+        .tab-pane { display: none; animation: fadeSlideIn 0.3s ease; }
+        .tab-pane.active-pane { display: block; }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .flex-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 130px; flex: 1 1 auto; }
+        .form-group label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--primary-light); margin-bottom: 1px; }
+        input, select, textarea { border-radius: var(--radius-xl); padding: 9px 16px; border: 1.5px solid #d5e2ec; font-size: 0.84rem; background: #fafcfd; transition: var(--transition); outline: none; font-family: var(--font-stack); color: var(--text); }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-light); box-shadow: 0 0 0 4px rgba(44, 125, 160, 0.08); background: #fff; }
+        button.primary { background: var(--primary-light); color: #fff; box-shadow: 0 2px 8px rgba(44, 125, 160, 0.2); padding: 9px 20px; font-weight: 600; }
+        button.success { background: var(--success); color: #fff; box-shadow: 0 2px 8px rgba(46, 125, 91, 0.18); padding: 9px 20px; font-weight: 600; }
+        button.outline { background: #fff; border: 1.5px solid #c8d8e5; color: var(--text-secondary); padding: 9px 18px; font-weight: 500; }
+        button.outline:hover { border-color: var(--primary-light); color: var(--primary); background: #fafdfe; }
+        .danger-btn { background: var(--danger-soft); border: 1.5px solid #f0c4bd; color: var(--danger); padding: 9px 18px; font-weight: 500; }
+        .danger-btn:hover { background: #fef0ee; border-color: #e8a89e; }
+        .warning-btn { background: var(--accent-light); border: 1.5px solid #f5d090; color: #b45f06; padding: 9px 18px; font-weight: 500; }
+        .material-table-wrapper, .table-wrapper { overflow-x: auto; border-radius: var(--radius); max-height: 580px; overflow-y: auto; border: 1px solid #e8eef3; background: #fff; scroll-behavior: smooth; }
+        .req-table, .material-search-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 860px; }
+        .req-table th, .req-table td, .material-search-table th, .material-search-table td { padding: 10px 7px; border-bottom: 1px solid #eef3f7; vertical-align: middle; text-align: left; }
+        .req-table tr:hover td, .material-search-table tr:hover td { background: #f9fcfd; }
+        .req-table th, .material-search-table th { background: #f7fafc; font-weight: 700; color: #1a3d52; position: sticky; top: 0; border-bottom: 2px solid #dce8f0; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.4px; z-index: 1; }
+        .sort-indicator { margin-left: 4px; font-size: 0.6rem; opacity: 0.7; }
+        .resize-handle { position: absolute; right: 0; top: 0; width: 7px; height: 100%; cursor: col-resize; background: transparent; z-index: 10; border-radius: 0 4px 4px 0; }
+        .resize-handle:hover { background: var(--primary-light); opacity: 0.25; }
+        .qty-input, .stock-manual-input, .remark-input { width: 100%; text-align: center; padding: 7px 6px; border-radius: var(--radius-sm); font-size: 0.76rem; border: 1.5px solid #e4ecf2; }
+        .delete-item { font-size: 1.1rem; opacity: 0.5; padding: 4px 8px; }
+        .delete-item:hover { opacity: 1; color: #e74c3c; background: #fef5f4; border-radius: 50%; }
+        .status-bar { font-size: 0.68rem; background: #eef4f8; padding: 7px 18px; border-radius: var(--radius-xl); display: inline-block; margin-top: 10px; color: var(--primary-light); font-weight: 500; letter-spacing: 0.2px; }
+        .quick-add-area { background: #fafdfe; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 18px; border: 1px solid #e4edf3; }
+        .quick-results { max-height: 260px; overflow-y: auto; margin-top: 12px; border-radius: var(--radius); background: #fff; border: 1px solid #e4eef5; }
+        .quick-results table { width: 100%; font-size: 0.76rem; }
+        .quick-results th { background: #f7fafc; padding: 8px 10px; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 2px solid #dce8f0; position: sticky; top: 0; }
+        .quick-results td { padding: 7px 10px; border-bottom: 1px solid #f0f4f7; }
+        .quick-results tr:hover td { background: #f9fdfe; }
+        .add-quick-btn { background: var(--primary-soft); color: var(--primary); padding: 5px 14px; border-radius: var(--radius-xl); font-size: 0.72rem; font-weight: 600; border: 1px solid #c8dbe8; cursor: pointer; transition: var(--transition); }
+        .add-quick-btn:hover { background: var(--primary-light); color: #fff; border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
+        .batch-area { background: #fbfeff; border-radius: var(--radius); margin-bottom: 16px; border: 1px solid #e4edf3; padding: 16px 18px; }
+        .batch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; align-items: end; }
+        .batch-import-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; padding-top: 12px; border-top: 1px solid #e4edf3; }
+        .pagination-bar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .pagination-bar button { background: #fff; border: 1px solid #d5e2ec; border-radius: var(--radius-xl); padding: 6px 14px; font-size: 0.74rem; color: var(--text-secondary); }
+        .pagination-bar button:disabled { opacity: 0.45; cursor: not-allowed; }
+        .library-count-badge { background: #eef3f7; border-radius: var(--radius-xl); padding: 5px 16px; font-size: 0.7rem; font-weight: 600; color: var(--primary-light); border: 1px solid #dce6ed; }
+        .btn-icon-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .auth-card { background: #fff; border-radius: var(--radius-lg); padding: 2rem 2rem 2.2rem; width: 90%; max-width: 420px; box-shadow: 0 40px 60px -20px rgba(0, 0, 0, 0.4); text-align: center; }
+        .auth-card h2 { font-weight: 700; margin: 0.8rem 0 0.5rem; color: var(--primary); font-size: 1.5rem; }
+        .auth-card i.fa-ship { font-size: 3rem; color: var(--primary-light); margin-bottom: 0.4rem; }
+        .progress-bar-container { background: #e0eaf1; border-radius: 24px; height: 8px; margin-top: 6px; overflow: hidden; width: 100%; }
+        .progress-bar-fill { background: var(--primary-light); width: 0%; height: 100%; transition: width 0.2s; }
+        .lang-toggle-btn { min-width: 80px; justify-content: center; gap: 6px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #eef3f7; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #c5d9e8; border-radius: 10px; }
+        .inline-edit { cursor: pointer; border-bottom: 1px dashed #90b8cf; transition: var(--transition); }
+        .inline-edit:hover { color: var(--primary); border-bottom-color: var(--primary); }
+        .req-search-bar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 14px; }
+        .req-search-bar .form-group { flex: 2; min-width: 200px; }
+        .delete-material { background: none; border: none; cursor: pointer; color: #b0c4de; transition: var(--transition); font-size: 1rem; padding: 4px 8px; border-radius: 50%; }
+        .delete-material:hover { color: #e74c3c; background: #fef5f4; }
+        .input-icon { position: relative; margin: 12px 0 8px; }
+        .input-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #90b8cf; font-size: 1rem; pointer-events: none; }
+        .input-icon input { width: 100%; padding-left: 42px; margin: 0; }
+        .error-msg { color: #c0392b; margin-top: 12px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -646,7 +129,7 @@
             <div class="input-icon" id="pwd2Container" style="display:block;"><i class="fas fa-check-circle"></i><input type="password" id="authPassword2" placeholder="再次输入密码" autocomplete="off"></div>
             <button id="authSubmitBtn" style="background:#2c7da0;color:white;padding:12px;width:100%;margin-top:8px;font-weight:600;border-radius:40px;"><i class="fas fa-check-circle"></i> 确认并解锁</button>
             <div id="authError" class="error-msg"></div>
-            <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · 分片存储 · 安全加密 · 支持15W+条目</div>
+            <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · 双存储保护 · 支持15W+条目</div>
         </div>
     </div>
     <div class="app-container" id="mainApp" style="display:none;">
@@ -659,7 +142,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v8.6 · 稳定分片版</div>
+                <div class="version-corner">v9.3 · 双存储</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -696,18 +179,7 @@
                         <div style="flex:3;"><input type="text" id="quickSearchInput" placeholder="输入IMPA码或物料描述进行快速搜索" style="width:100%;"></div><button id="clearQuickSearchBtn" class="outline"><i class="fas fa-eraser"></i> 清空</button>
                     </div>
                     <div id="quickSearchResults" class="quick-results" style="display:none;">
-                        <table style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>IMPA</th>
-                                    <th>物料描述</th>
-                                    <th>规格型号</th>
-                                    <th>单位</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody id="quickSearchTbody"></tbody>
-                        </table>
+                        <table style="width:100%"><thead><tr><th>IMPA</th><th>物料描述</th><th>规格型号</th><th>单位</th><th></th></tr></thead><tbody id="quickSearchTbody"></tbody></table>
                     </div>
                 </div>
                 <div class="req-search-bar">
@@ -722,25 +194,19 @@
                 <div class="table-wrapper">
                     <table class="req-table" id="reqTable">
                         <colgroup id="reqColgroup"></colgroup>
-                        <thead>
-                            <tr>
-                                <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox"></th>
-                                <th>#</th>
-                                <th data-sort="impa">IMPA <span class="sort-indicator"></span></th>
-                                <th data-sort="description">物料描述 <span class="sort-indicator"></span></th>
-                                <th data-sort="spec">规格型号 <span class="sort-indicator"></span></th>
-                                <th data-sort="unit">单位 <span class="sort-indicator"></span></th>
-                                <th data-sort="stock">库存(手动) <span class="sort-indicator"></span></th>
-                                <th data-sort="quantity">申请数量 <span class="sort-indicator"></span></th>
-                                <th data-sort="remark">备注 <span class="sort-indicator"></span></th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reqTableBody">
-                            <tr>
-                                <td colspan="10">暂无物料，请从搜索区添加</td>
-                            </tr>
-                        </tbody>
+                        <thead><tr>
+                            <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox"></th>
+                            <th>#</th>
+                            <th data-sort="impa">IMPA <span class="sort-indicator"></span></th>
+                            <th data-sort="description">物料描述 <span class="sort-indicator"></span></th>
+                            <th data-sort="spec">规格型号 <span class="sort-indicator"></span></th>
+                            <th data-sort="unit">单位 <span class="sort-indicator"></span></th>
+                            <th data-sort="stock">库存(手动) <span class="sort-indicator"></span></th>
+                            <th data-sort="quantity">申请数量 <span class="sort-indicator"></span></th>
+                            <th data-sort="remark">备注 <span class="sort-indicator"></span></th>
+                            <th>操作</th>
+                        </tr></thead>
+                        <tbody id="reqTableBody"><tr><td colspan="10">暂无物料，请从搜索区添加</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -748,13 +214,11 @@
         <div id="materialTab" class="tab-pane">
             <div class="card">
                 <div class="card-header"><span><i class="fas fa-warehouse"></i> 智能物料库 (IMPA 中/英双库 · 分片存储)</span>
-                    <div class="btn-icon-group"><button id="importEnBtn" class="primary"><i class="fas fa-file-import"></i> 导入英文库</button><button id="importZhBtn" class="primary"><i class="fas fa-file-import"></i> 导入中文库</button><button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空当前库</button><button id="backupAllDataBtn" class="success"><i class="fas fa-database"></i> 加密备份</button><button id="restoreBackupBtn" class="outline"><i class="fas fa-undo-alt"></i> 恢复备份</button></div>
+                    <div class="btn-icon-group"><button id="reloadMaterialBtn" class="outline" title="从加密存储中重新加载物料库"><i class="fas fa-sync-alt"></i> 刷新库</button><button id="importEnBtn" class="primary"><i class="fas fa-file-import"></i> 导入英文库</button><button id="importZhBtn" class="primary"><i class="fas fa-file-import"></i> 导入中文库</button><button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空当前库</button></div>
                 </div>
                 <div id="importProgressArea" style="display:none;" class="status-bar">
                     <div>导入进度: <span id="importProgressText">0%</span></div>
-                    <div class="progress-bar-container">
-                        <div id="importProgressFill" class="progress-bar-fill"></div>
-                    </div>
+                    <div class="progress-bar-container"><div id="importProgressFill" class="progress-bar-fill"></div></div>
                 </div>
                 <div class="flex-row">
                     <div class="form-group search-input" style="flex:3"><label><i class="fas fa-search"></i> 搜索物料 (支持15万+条目)</label>
@@ -782,1138 +246,771 @@
                 <div class="material-table-wrapper">
                     <table class="material-search-table" id="materialSearchTable">
                         <colgroup id="materialColgroup"></colgroup>
-                        <thead>
-                            <tr>
-                                <th>序号</th>
-                                <th>IMPA</th>
-                                <th>物料描述</th>
-                                <th>规格型号</th>
-                                <th>单位</th>
-                                <th>备注</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>序号</th><th>IMPA</th><th>物料描述</th><th>规格型号</th><th>单位</th><th>备注</th><th>操作</th></tr></thead>
                         <tbody id="materialSearchBody"></tbody>
                     </table>
                 </div>
-                <div class="pagination-bar" id="materialPagination"><button id="matFirstPage" disabled><i class="fas fa-fast-backward"></i> 首页</button><button id="matPrevPage" disabled><i class="fas fa-step-backward"></i> 上一页</button><span>第 <span id="matCurrentPageSpan">1</span> / <span id="matTotalPagesSpan">1</span> 页</span><button id="matNextPage" disabled>下一页 <i class="fas fa-step-forward"></i></button><button id="matLastPage" disabled>尾页 <i class="fas fa-fast-forward"></i></button><select id="matPageSizeSelect">
-                        <option value="30">30条/页</option>
-                        <option value="50">50条/页</option>
-                        <option value="100" selected>100条/页</option>
-                        <option value="200">200条/页</option>
-                    </select></div>
+                <div class="pagination-bar" id="materialPagination"><button id="matFirstPage" disabled><i class="fas fa-fast-backward"></i> 首页</button><button id="matPrevPage" disabled><i class="fas fa-step-backward"></i> 上一页</button><span>第 <span id="matCurrentPageSpan">1</span> / <span id="matTotalPagesSpan">1</span> 页</span><button id="matNextPage" disabled>下一页 <i class="fas fa-step-forward"></i></button><button id="matLastPage" disabled>尾页 <i class="fas fa-fast-forward"></i></button><select id="matPageSizeSelect"><option value="30">30条/页</option><option value="50">50条/页</option><option value="100" selected>100条/页</option><option value="200">200条/页</option></select></div>
             </div>
         </div>
     </div>
     <script>
-// ========== 安全与分片核心 (v8.6 增强恢复与持久化) ==========
-let cryptoKey = null,
-    isAuthenticated = false,
-    operationLogs = [];
-const META_KEY = 'impa_security_meta_v86',
-    ENC_PREFIX = 'v1::';
-const CHUNK_SIZE = 5000;
-const secureStores = {
-    en: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'material_en' }),
-    zh: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'material_zh' }),
-    app: localforage.createInstance({ name: 'IMPA_SecureDB_v86', storeName: 'applications' })
-};
+        // ========== v9.3 安全双存储核心 ==========
+        let cryptoKey = null,
+            isAuthenticated = false,
+            operationLogs = [];
+        const META_KEY = 'impa_security_meta_v93',
+            ENC_PREFIX = 'v1::';
+        const CHUNK_SIZE = 2500; // 减小分片大小，降低单次存储压力
+        const LS_PREFIX = 'ls_backup_'; // localStorage 备份前缀
+        const secureStores = {
+            en: localforage.createInstance({ name: 'IMPA_SecureDB_v93', storeName: 'material_en' }),
+            zh: localforage.createInstance({ name: 'IMPA_SecureDB_v93', storeName: 'material_zh' }),
+            app: localforage.createInstance({ name: 'IMPA_SecureDB_v93', storeName: 'applications' })
+        };
 
-function uint8ArrayToBase64(bytes, chunk = 32768) {
-    let result = '';
-    for (let i = 0; i < bytes.length; i += chunk) {
-        let chunkBytes = bytes.subarray(i, i + chunk);
-        let binaryString = '';
-        for (let j = 0; j < chunkBytes.length; j++) binaryString += String.fromCharCode(chunkBytes[j]);
-        result += btoa(binaryString);
-    }
-    return result;
-}
-
-function base64ToUint8Array(base64String) {
-    let binaryString = atob(base64String);
-    let length = binaryString.length;
-    let uint8Array = new Uint8Array(length);
-    for (let i = 0; i < length; i++) uint8Array[i] = binaryString.charCodeAt(i);
-    return uint8Array;
-}
-
-async function encryptData(plainText) {
-    const initializationVector = crypto.getRandomValues(new Uint8Array(12));
-    const encodedText = new TextEncoder().encode(plainText);
-    const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: initializationVector }, cryptoKey, encodedText);
-    const combinedArray = new Uint8Array(initializationVector.length + ciphertext.byteLength);
-    combinedArray.set(initializationVector);
-    combinedArray.set(new Uint8Array(ciphertext), initializationVector.length);
-    return ENC_PREFIX + uint8ArrayToBase64(combinedArray);
-}
-
-async function decryptData(encryptedBase64) {
-    if (!encryptedBase64.startsWith(ENC_PREFIX)) throw new Error("无效加密格式");
-    const rawData = base64ToUint8Array(encryptedBase64.slice(ENC_PREFIX.length));
-    const initializationVector = rawData.slice(0, 12);
-    const cipherData = rawData.slice(12);
-    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: initializationVector }, cryptoKey, cipherData);
-    return new TextDecoder().decode(decrypted);
-}
-
-async function deriveKeyFromPassword(password, salt) {
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
-    return await crypto.subtle.deriveKey({ name: "PBKDF2", salt: salt, iterations: 210000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-}
-
-async function computeAuthHash(password, salt) {
-    const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
-    const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: salt, iterations: 210000, hash: "SHA-256" }, keyMaterial, 256);
-    return btoa(String.fromCharCode(...new Uint8Array(bits)));
-}
-
-async function setupMasterPassword(password) {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const key = await deriveKeyFromPassword(password, salt);
-    const authHash = await computeAuthHash(password, salt);
-    localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...salt)), authHash, version: 6 }));
-    cryptoKey = key;
-    isAuthenticated = true;
-    for (let store of ['en', 'zh']) {
-        await saveChunkedData(store, []);
-    }
-    addLog("系统初始化", "v8.6 稳定分片核心");
-    return true;
-}
-
-async function verifyPassword(password) {
-    const metaRaw = localStorage.getItem(META_KEY);
-    if (!metaRaw) return false;
-    const meta = JSON.parse(metaRaw);
-    const salt = Uint8Array.from(atob(meta.salt), character => character.charCodeAt(0));
-    if ((await computeAuthHash(password, salt)) !== meta.authHash) return false;
-    cryptoKey = await deriveKeyFromPassword(password, salt);
-    isAuthenticated = true;
-    const logsEncrypted = localStorage.getItem('impa_audit_logs');
-    if (logsEncrypted) {
-        try { operationLogs = JSON.parse(await decryptData(logsEncrypted)); } catch (e) {}
-    }
-    return true;
-}
-
-async function saveChunkedData(storeName, fullArray) {
-    const allKeys = await secureStores[storeName].keys();
-    const oldChunkKeys = allKeys.filter(key => key.startsWith('chunk_'));
-
-    if (!fullArray.length) {
-        for (let key of oldChunkKeys) {
-            await secureStores[storeName].removeItem(key);
-        }
-        await secureSetItem(storeName, 'meta', { chunkCount: 0, total: 0 });
-        return true;
-    }
-
-    const chunks = [];
-    for (let i = 0; i < fullArray.length; i += CHUNK_SIZE) {
-        chunks.push(fullArray.slice(i, i + CHUNK_SIZE));
-    }
-
-    for (let index = 0; index < chunks.length; index++) {
-        await secureSetItem(storeName, `chunk_${index}`, chunks[index]);
-
-        let verified = false;
-        for (let retry = 0; retry < 10; retry++) {
-            const rawData = await secureStores[storeName].getItem(`chunk_${index}`);
-            if (rawData) {
-                verified = true;
-                break;
+        // 工具函数
+        function uint8ArrayToBase64(bytes, chunk = 4096) {
+            let result = '';
+            for (let i = 0; i < bytes.length; i += chunk) {
+                let chunkBytes = bytes.subarray(i, i + chunk);
+                let binaryString = '';
+                for (let j = 0; j < chunkBytes.length; j++) binaryString += String.fromCharCode(chunkBytes[j]);
+                result += btoa(binaryString);
             }
-            await new Promise(resolve => setTimeout(resolve, 150 * (retry + 1)));
+            return result;
         }
-        if (!verified) {
-            throw new Error(`分片写入验证失败: ${storeName} chunk_${index}`);
+        function base64ToUint8Array(base64String) {
+            let binaryString = atob(base64String);
+            let uint8Array = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) uint8Array[i] = binaryString.charCodeAt(i);
+            return uint8Array;
         }
-    }
-
-    for (let key of oldChunkKeys) {
-        const index = parseInt(key.split('_')[1]);
-        if (isNaN(index)) continue;
-        if (index >= chunks.length) {
-            await secureStores[storeName].removeItem(key);
+        async function encryptData(plainText) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(plainText);
+            const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, cryptoKey, encoded);
+            const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(ciphertext), iv.length);
+            return ENC_PREFIX + uint8ArrayToBase64(combined);
         }
-    }
+        async function decryptData(encryptedBase64) {
+            if (!encryptedBase64.startsWith(ENC_PREFIX)) throw new Error("无效加密格式");
+            const raw = base64ToUint8Array(encryptedBase64.slice(ENC_PREFIX.length));
+            const iv = raw.slice(0, 12);
+            const data = raw.slice(12);
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, cryptoKey, data);
+            return new TextDecoder().decode(decrypted);
+        }
+        async function deriveKeyFromPassword(password, salt) {
+            const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+            return await crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+        }
+        async function computeAuthHash(password, salt) {
+            const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+            const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" }, keyMaterial, 256);
+            return btoa(String.fromCharCode(...new Uint8Array(bits)));
+        }
+        async function setupMasterPassword(password) {
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            cryptoKey = await deriveKeyFromPassword(password, salt);
+            const authHash = await computeAuthHash(password, salt);
+            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...salt)), authHash, version: 9 }));
+            isAuthenticated = true;
+            for (let store of ['en', 'zh']) await saveChunkedData(store, []);
+            addLog("系统初始化", "v9.3 双存储");
+            return true;
+        }
+        async function verifyPassword(password) {
+            const metaRaw = localStorage.getItem(META_KEY);
+            if (!metaRaw) return false;
+            const meta = JSON.parse(metaRaw);
+            const salt = Uint8Array.from(atob(meta.salt), c => c.charCodeAt(0));
+            if ((await computeAuthHash(password, salt)) !== meta.authHash) return false;
+            cryptoKey = await deriveKeyFromPassword(password, salt);
+            isAuthenticated = true;
+            const logsEnc = localStorage.getItem('impa_audit_logs');
+            if (logsEnc) { try { operationLogs = JSON.parse(await decryptData(logsEnc)); } catch (e) {} }
+            return true;
+        }
 
-    await secureSetItem(storeName, 'meta', { chunkCount: chunks.length, total: fullArray.length });
-    return true;
-}
-
-async function loadChunkedData(storeName) {
-    let meta = await secureGetItem(storeName, 'meta', null);
-    const chunkKeys = (await secureStores[storeName].keys()).filter(key => key.startsWith('chunk_')).sort((a, b) => parseInt(a.split('_')[1]) - parseInt(b.split('_')[1]));
-    const chunksMap = new Map();
-    for (let key of chunkKeys) {
-        const data = await secureGetItem(storeName, key, null);
-        if (data) chunksMap.set(parseInt(key.split('_')[1]), data);
-    }
-    if (!meta && chunksMap.size === 0) return [];
-    if (!meta && chunksMap.size > 0) {
-        let allItems = [];
-        for (let i = 0; i < chunksMap.size; i++)
-            if (chunksMap.has(i)) allItems.push(...chunksMap.get(i));
-        const newMeta = { chunkCount: chunksMap.size, total: allItems.length };
-        await secureSetItem(storeName, 'meta', newMeta);
-        return allItems;
-    }
-    if (meta && chunksMap.size !== meta.chunkCount) {
-        console.warn(`${storeName} 分片数量不匹配，尝试尽力恢复`);
-        let recoveredItems = [];
-        for (let i = 0; i < meta.chunkCount; i++)
-            if (chunksMap.has(i)) recoveredItems.push(...chunksMap.get(i));
-        if (recoveredItems.length !== meta.total) console.warn(`恢复数量 ${recoveredItems.length} 期望 ${meta.total}`);
-        await secureSetItem(storeName, 'meta', { chunkCount: meta.chunkCount, total: recoveredItems.length });
-        return recoveredItems;
-    }
-    let result = [];
-    for (let index = 0; index < meta.chunkCount; index++) {
-        const chunk = chunksMap.has(index) ? chunksMap.get(index) : await secureGetItem(storeName, `chunk_${index}`, null);
-        if (!chunk) { console.warn(`分片缺失 ${storeName} chunk_${index}，跳过`); continue; }
-        result = result.concat(chunk);
-    }
-    return result;
-}
-
-async function secureSetItem(store, key, value) {
-    await secureStores[store].setItem(key, await encryptData(JSON.stringify(value)));
-}
-
-async function secureGetItem(store, key, defaultValue = null) {
-    const encryptedData = await secureStores[store].getItem(key);
-    if (!encryptedData) return defaultValue;
-    try { return JSON.parse(await decryptData(encryptedData)); } catch (e) { return defaultValue; }
-}
-
-async function loadAllSecureData() {
-    let enData = [],
-        zhData = [];
-    try { enData = await loadChunkedData('en'); } catch (e) { console.error("英文库加载失败", e); enData = []; }
-    try { zhData = await loadChunkedData('zh'); } catch (e) { console.error("中文库加载失败", e); zhData = []; }
-    let applicationsMap = {};
-    let appKeys = await secureStores.app.keys();
-    for (let key of appKeys) {
-        if (key !== 'meta' && !key.startsWith('chunk_')) applicationsMap[key] = await secureGetItem('app', key, null);
-    }
-    return { en: enData, zh: zhData, apps: applicationsMap };
-}
-
-function addLog(action, details) {
-    operationLogs.unshift({ timestamp: new Date().toISOString(), action, details: details || '' });
-    if (operationLogs.length > 500) operationLogs.pop();
-    if (cryptoKey) {
-        (async () => {
-            localStorage.setItem('impa_audit_logs', await encryptData(JSON.stringify(operationLogs.slice(0, 300))));
-        })();
-    }
-}
-
-async function requirePasswordAuth(operation) {
-    return new Promise(resolve => {
-        let password = prompt(`🔐 安全验证: 执行「${operation}」需要主密码`, "");
-        if (password === null) resolve(false);
-        else verifyPassword(password).then(ok => {
-            if (ok) { addLog("授权操作", operation); resolve(true); } else { alert("密码错误"); resolve(false); }
-        });
-    });
-}
-
-async function changePassword(oldPassword, newPassword, newPasswordConfirm) {
-    if (newPassword !== newPasswordConfirm) throw new Error("两次新密码不一致");
-    if (!await verifyPassword(oldPassword)) throw new Error("原密码错误");
-    alert("正在重新加密海量数据，请稍候...");
-    let { en, zh, apps } = await loadAllSecureData();
-    let newSalt = crypto.getRandomValues(new Uint8Array(16));
-    let newKey = await deriveKeyFromPassword(newPassword, newSalt);
-    let newAuthHash = await computeAuthHash(newPassword, newSalt);
-    localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newAuthHash, version: 6 }));
-    cryptoKey = newKey;
-    await saveChunkedData('en', en);
-    await saveChunkedData('zh', zh);
-    for (let [key, value] of Object.entries(apps)) await secureSetItem('app', key, value);
-    addLog("密码修改", "已完成");
-    return true;
-}
-
-// ========== 业务全局变量 ==========
-let materialDataEn = [],
-    materialDataZh = [],
-    currentApplication = { reqNo: '', applicant: '2/O', applyTime: '', items: [], ordered: false },
-    autoSaveTimer = null,
-    reqFilterKeyword = '',
-    reqSearchField = 'all',
-    materialFilteredData = [],
-    materialCurrentPage = 1,
-    materialPageSize = 100,
-    materialTotalPages = 1,
-    searchDebounceTimer = null,
-    reqSearchDebounceTimer = null,
-    quickSearchDebounce = null,
-    reqSortField = null,
-    reqSortAsc = true,
-    reqColumnWidths = [32, 40, 100, 180, 150, 80, 100, 100, 120, 60],
-    materialColumnWidths = [50, 120, 200, 180, 80, 150, 60],
-    currentLang = 'zh';
-
-// DOM 引用
-const reqSerialInput = document.getElementById('reqSerial'),
-    applicantInput = document.getElementById('applicant'),
-    applyTimeInput = document.getElementById('applyTime'),
-    searchKeyword = document.getElementById('searchKeyword'),
-    materialSearchBody = document.getElementById('materialSearchBody'),
-    reqTableBody = document.getElementById('reqTableBody'),
-    itemCountBadge = document.getElementById('itemCountBadge'),
-    autoSaveSpan = document.getElementById('autoSaveStatus'),
-    toggleLangBtn = document.getElementById('toggleLangBtn'),
-    historyReqSelect = document.getElementById('historyReqSelect'),
-    refreshHistoryBtn = document.getElementById('refreshHistoryBtn'),
-    manualSaveBtn = document.getElementById('manualSaveBtn'),
-    exportExcelBtn = document.getElementById('exportExcelBtn'),
-    loadReqBtn = document.getElementById('loadReqBtn'),
-    newReqBtn = document.getElementById('newReqBtn'),
-    importReqFromExcelBtn = document.getElementById('importReqFromExcelBtn'),
-    reqSearchKeyword = document.getElementById('reqSearchKeyword'),
-    clearSearchBtn = document.getElementById('clearSearchBtn'),
-    selectAllCheckbox = document.getElementById('selectAllCheckbox'),
-    historyDeleteIconBtn = document.getElementById('historyDeleteIconBtn'),
-    currentLibraryCountSpan = document.getElementById('currentLibraryCount'),
-    importEnBtn = document.getElementById('importEnBtn'),
-    importZhBtn = document.getElementById('importZhBtn'),
-    addCustomMaterialBtn = document.getElementById('addCustomMaterialBtn'),
-    newImpa = document.getElementById('newImpa'),
-    newDesc = document.getElementById('newDesc'),
-    newSpec = document.getElementById('newSpec'),
-    newUnit = document.getElementById('newUnit'),
-    newRemark = document.getElementById('newRemark'),
-    searchFieldSelect = document.getElementById('searchFieldSelect'),
-    reqSearchFieldSelect = document.getElementById('reqSearchFieldSelect'),
-    quickSearchInput = document.getElementById('quickSearchInput'),
-    quickSearchResultsDiv = document.getElementById('quickSearchResults'),
-    quickSearchTbody = document.getElementById('quickSearchTbody'),
-    clearQuickSearchBtn = document.getElementById('clearQuickSearchBtn'),
-    matFirstPage = document.getElementById('matFirstPage'),
-    matPrevPage = document.getElementById('matPrevPage'),
-    matNextPage = document.getElementById('matNextPage'),
-    matLastPage = document.getElementById('matLastPage'),
-    matPageSizeSelect = document.getElementById('matPageSizeSelect'),
-    matCurrentPageSpan = document.getElementById('matCurrentPageSpan'),
-    matTotalPagesSpan = document.getElementById('matTotalPagesSpan'),
-    batchDeleteReqBtn = document.getElementById('batchDeleteReqBtn'),
-    reqColgroup = document.getElementById('reqColgroup'),
-    materialColgroup = document.getElementById('materialColgroup'),
-    backupAllDataBtn = document.getElementById('backupAllDataBtn'),
-    restoreBackupBtn = document.getElementById('restoreBackupBtn'),
-    batchAddMaterialBtn = document.getElementById('batchAddMaterialBtn'),
-    clearLibraryBtn = document.getElementById('clearLibraryBtn');
-
-function escapeHtml(text) { if (!text) return ''; return text.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])); }
-
-function sanitizeExcelCell(value) { if (value == null) return ''; let stringValue = String(value); if (stringValue.length && '=+-@'.includes(stringValue[0])) return "'" + stringValue; return stringValue; }
-
-function getCurrentMaterialArray() { return currentLang === 'en' ? materialDataEn : materialDataZh; }
-
-function ensureRemarkField(array) { array.forEach(item => { if (item.remark === undefined) item.remark = ''; }); return array; }
-
-async function saveFullMaterialArray(language, data) {
-    if (language === 'en') materialDataEn = data;
-    else materialDataZh = data;
-    await saveChunkedData(language, data);
-    addLog("物料库变更", `${language==='en'?'英文':'中文'}库 ${data.length}条`);
-}
-
-function updateLibraryCountDisplay() { currentLibraryCountSpan.innerText = `${getCurrentMaterialArray().length} 条`; }
-
-async function clearAllMaterialLibraries() {
-    if (!await requirePasswordAuth("清空全部物料库")) return;
-    if (confirm("⚠️ 危险操作：将清空【英文库】和【中文库】所有物料数据！此操作不可撤销，确认清空？")) {
-        await saveChunkedData('en', []);
-        await saveChunkedData('zh', []);
-        materialDataEn = [];
-        materialDataZh = [];
-        performMaterialSearch();
-        renderRequestTable();
-        updateLibraryCountDisplay();
-        addLog("清空库", "所有物料数据已清空");
-        alert("物料库已完全清空");
-    }
-}
-
-async function exportAllDataAsJson() {
-    if (!await requirePasswordAuth("备份数据")) return;
-    alert("加密打包中...");
-    let en = materialDataEn,
-        zh = materialDataZh,
-        keys = await secureStores.app.keys(),
-        apps = {};
-    for (let key of keys)
-        if (!key.startsWith('chunk_') && key !== 'meta') apps[key] = await secureGetItem('app', key, null);
-    let exportObject = { version: "8.6", materialDataEn: en, materialDataZh: zh, applications: apps };
-    let encrypted = await encryptData(JSON.stringify(exportObject));
-    let blob = new Blob([encrypted], { type: "application/octet-stream" });
-    let a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `IMPA_SecureBackup_v86_${new Date().toISOString().slice(0,19)}.bin`;
-    a.click();
-    addLog("备份导出", "已生成");
-    alert("备份完成");
-}
-
-async function restoreFromBackup() {
-    if (!await requirePasswordAuth("恢复备份")) return;
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.bin,.json';
-    input.onchange = async e => {
-        let file = e.target.files[0];
-        if (!file) return;
-        let raw = await file.text();
-        try {
-            let decrypted = raw.startsWith(ENC_PREFIX) ? await decryptData(raw) : raw;
-            let data = JSON.parse(decrypted);
-            if (!data.materialDataEn) throw new Error("备份格式错误");
-            let mode = confirm("覆盖当前数据? 确定=覆盖 取消=合并");
-            if (mode) {
-                materialDataEn = data.materialDataEn || [];
-                materialDataZh = data.materialDataZh || [];
-                await saveChunkedData('en', materialDataEn);
-                await saveChunkedData('zh', materialDataZh);
-                let keys = await secureStores.app.keys();
-                for (let key of keys)
-                    if (!key.startsWith('chunk_') && key !== 'meta') await secureStores.app.removeItem(key);
-                for (let [key, value] of Object.entries(data.applications || {}))
-                    if (value && value.items) await secureSetItem('app', key, value);
-            } else {
-                let enMap = new Map(materialDataEn.map(m => [m.impa, m]));
-                for (let m of data.materialDataEn || [])
-                    if (!enMap.has(m.impa)) materialDataEn.push(m);
-                let zhMap = new Map(materialDataZh.map(m => [m.impa, m]));
-                for (let m of data.materialDataZh || [])
-                    if (!zhMap.has(m.impa)) materialDataZh.push(m);
-                await saveChunkedData('en', materialDataEn);
-                await saveChunkedData('zh', materialDataZh);
-                for (let [key, value] of Object.entries(data.applications || {}))
-                    if (value && value.items && !(await secureGetItem('app', key, null))) await secureSetItem('app', key, value);
+        // localStorage 备份读写
+        function lsSet(storeName, key, value) {
+            try { localStorage.setItem(`${LS_PREFIX}${storeName}_${key}`, value); } catch (e) { console.warn('localStorage 写入失败', e); }
+        }
+        function lsGet(storeName, key) {
+            return localStorage.getItem(`${LS_PREFIX}${storeName}_${key}`);
+        }
+        function lsRemove(storeName, key) {
+            localStorage.removeItem(`${LS_PREFIX}${storeName}_${key}`);
+        }
+        function lsKeys(storeName) {
+            const prefix = `${LS_PREFIX}${storeName}_`;
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k.startsWith(prefix)) keys.push(k.substring(prefix.length));
             }
-            setTimeout(() => { performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay(); refreshHistoryList(); }, 120);
-            addLog("恢复备份", "成功");
-            alert("恢复成功!");
-        } catch (err) { alert("恢复失败:\n" + err.message); }
-    };
-    input.click();
-}
-
-function performMaterialSearch() {
-    let keyword = searchKeyword.value.trim().toLowerCase(),
-        field = searchFieldSelect.value,
-        currentArray = getCurrentMaterialArray();
-    if (!currentArray.length) {
-        materialFilteredData = [];
-        materialTotalPages = 1;
-        materialCurrentPage = 1;
-        renderMaterialTable();
-        updateMaterialPaginationControls();
-        return;
-    }
-    let filtered = keyword ? currentArray.filter(material => {
-        if (field === 'impa') return material.impa.toLowerCase().includes(keyword);
-        if (field === 'description') return material.description.toLowerCase().includes(keyword);
-        if (field === 'unit') return (material.unit || '').toLowerCase().includes(keyword);
-        if (field === 'remark') return (material.remark || '').toLowerCase().includes(keyword);
-        return material.impa.toLowerCase().includes(keyword) || material.description.toLowerCase().includes(keyword) || (material.unit || '').toLowerCase().includes(keyword) || (material.remark || '').toLowerCase().includes(keyword);
-    }) : currentArray.slice();
-    materialFilteredData = filtered;
-    materialTotalPages = Math.ceil(materialFilteredData.length / materialPageSize);
-    if (materialCurrentPage > materialTotalPages) materialCurrentPage = Math.max(1, materialTotalPages);
-    renderMaterialTable();
-    updateMaterialPaginationControls();
-    saveUISettings();
-}
-
-function renderMaterialTable() {
-    if (!materialFilteredData.length) {
-        materialSearchBody.innerHTML = '<tr><td colspan="7">暂无物料</td></tr>';
-        return;
-    }
-    let start = (materialCurrentPage - 1) * materialPageSize,
-        pageData = materialFilteredData.slice(start, start + materialPageSize);
-    let html = '';
-    pageData.forEach((item, idx) => {
-        let serial = start + idx + 1;
-        html += `<tr data-impa="${escapeHtml(item.impa)}"><td>${serial}</td><td>${escapeHtml(item.impa)}</td><td><div class="inline-edit" data-field="description" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.description)}</div></td><td><div class="inline-edit" data-field="specification" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.specification||'')}</div></td><td><div class="inline-edit" data-field="unit" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.unit||'')}</div></td><td><div class="inline-edit" data-field="remark" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.remark||'')}</div></td><td><button class="delete-material" data-impa="${escapeHtml(item.impa)}"><i class="far fa-trash-alt"></i></button></td></tr>`;
-    });
-    materialSearchBody.innerHTML = html;
-    initResizeHandlers('materialSearchTable', false);
-}
-
-function updateMaterialPaginationControls() {
-    matFirstPage.disabled = materialCurrentPage === 1 || materialTotalPages === 0;
-    matPrevPage.disabled = materialCurrentPage === 1 || materialTotalPages === 0;
-    matNextPage.disabled = materialCurrentPage === materialTotalPages || materialTotalPages === 0;
-    matLastPage.disabled = materialCurrentPage === materialTotalPages || materialTotalPages === 0;
-    matCurrentPageSpan.innerText = materialCurrentPage;
-    matTotalPagesSpan.innerText = materialTotalPages || 1;
-}
-
-function goToMaterialPage(page) {
-    if (page < 1) page = 1;
-    if (page > materialTotalPages) page = materialTotalPages;
-    if (materialCurrentPage !== page) { materialCurrentPage = page; renderMaterialTable(); updateMaterialPaginationControls(); saveUISettings(); }
-}
-
-function renderRequestTable() {
-    let allItems = currentApplication.items;
-    let filtered = reqFilterKeyword.trim() ? allItems.filter(item => {
-        let keyword = reqFilterKeyword.toLowerCase(),
-            field = reqSearchField;
-        if (field === 'impa') return item.impa.toLowerCase().includes(keyword);
-        if (field === 'description') return item.description.toLowerCase().includes(keyword);
-        return item.impa.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword);
-    }) : allItems.slice();
-    if (!allItems.length) {
-        reqTableBody.innerHTML = '<tr><td colspan="10">暂无物料</td></tr>';
-        itemCountBadge.innerText = '0 项';
-        selectAllCheckbox.checked = false;
-        return;
-    }
-    let toRender = (reqSortField === null) ? [...filtered].reverse() : filtered;
-    let html = '';
-    toRender.forEach((item, displayIndex) => {
-        let originalIndex = allItems.findIndex(i => i === item);
-        let manualStock = item.manualStock ?? 0;
-        html += `<tr data-original-idx="${originalIndex}"><td class="checkbox-col"><input type="checkbox" class="req-item-checkbox" data-original-idx="${originalIndex}"></td><td>${displayIndex+1}</td><td>${escapeHtml(item.impa)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.spec||'-')}</td><td>${escapeHtml(item.unit||'-')}</td><td><input type="number" class="stock-manual-input" value="${manualStock}" step="any" min="0" data-original-idx="${originalIndex}" style="width:90px;"></td><td><input type="number" class="qty-input" value="${item.quantity||1}" min="0" step="any" data-original-idx="${originalIndex}" style="width:80px;"></td><td><input type="text" class="remark-input" placeholder="备注" value="${escapeHtml(item.remark||'')}" data-original-idx="${originalIndex}" maxlength="200"></td><td><button class="delete-item" data-original-idx="${originalIndex}"><i class="far fa-trash-alt"></i></button></td></tr>`;
-    });
-    reqTableBody.innerHTML = html;
-    itemCountBadge.innerText = `${allItems.length} 项`;
-    bindSelectAllEvents();
-    initResizeHandlers('reqTable', true);
-}
-
-function bindSelectAllEvents() {
-    let checkboxes = document.querySelectorAll('.req-item-checkbox');
-    if (!checkboxes.length) { selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = false; return; }
-    let allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-    selectAllCheckbox.checked = allChecked;
-    selectAllCheckbox.indeterminate = (!allChecked && Array.from(checkboxes).some(checkbox => checkbox.checked));
-}
-
-function attachSelectAllEvent() {
-    document.querySelector('.table-wrapper')?.addEventListener('change', e => {
-        if (e.target && e.target.id === 'selectAllCheckbox') {
-            let checked = e.target.checked;
-            document.querySelectorAll('.req-item-checkbox').forEach(checkbox => checkbox.checked = checked);
-            bindSelectAllEvents();
+            return keys;
         }
-    });
-}
 
-function filterRequestTable() {
-    clearTimeout(reqSearchDebounceTimer);
-    reqSearchDebounceTimer = setTimeout(() => { reqFilterKeyword = reqSearchKeyword.value.trim(); reqSearchField = reqSearchFieldSelect.value; renderRequestTable(); saveUISettings(); }, 300);
-}
-
-function clearSearch() { reqSearchKeyword.value = ''; reqFilterKeyword = ''; renderRequestTable(); saveUISettings(); }
-
-function addItemToRequest(material) {
-    if (currentApplication.items.some(item => item.impa === material.impa)) { alert(`物料 ${material.impa} 已存在`); return false; }
-    currentApplication.items.push({ impa: material.impa, description: material.description, spec: material.specification || '', unit: material.unit || '', quantity: 1, remark: material.remark || '', manualStock: 0 });
-    triggerAutoSave();
-    renderRequestTable();
-    return true;
-}
-
-function batchDeleteReqItems() {
-    let checkboxes = document.querySelectorAll('.req-item-checkbox:checked');
-    if (!checkboxes.length) return alert("请先选中");
-    if (!confirm(`删除 ${checkboxes.length} 项？`)) return;
-    let indices = Array.from(checkboxes).map(checkbox => parseInt(checkbox.dataset.originalIdx)).sort((a, b) => b - a);
-    indices.forEach(index => { if (!isNaN(index)) currentApplication.items.splice(index, 1); });
-    triggerAutoSave();
-    renderRequestTable();
-}
-
-function exportToExcel() {
-    if (!currentApplication.reqNo) return alert("请填写申请次序号");
-    let data = [
-        ["物料申请单", "", "", "", "", "", ""],
-        ["申请次序号", currentApplication.reqNo, "申请人", currentApplication.applicant, "申请时间", currentApplication.applyTime || "", ""],
-        [],
-        ["IMPA", "物料描述", "规格型号", "单位", "库存", "申请数量", "备注"]
-    ];
-    for (let item of currentApplication.items) data.push([sanitizeExcelCell(item.impa), sanitizeExcelCell(item.description), sanitizeExcelCell(item.spec), sanitizeExcelCell(item.unit), sanitizeExcelCell(item.manualStock ?? 0), sanitizeExcelCell(item.quantity), sanitizeExcelCell(item.remark)]);
-    let worksheet = XLSX.utils.aoa_to_sheet(data);
-    worksheet['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 20 }];
-    let workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "物料申请单");
-    XLSX.writeFile(workbook, `物料申请单_${currentApplication.reqNo}.xlsx`);
-    addLog("导出申请单", currentApplication.reqNo);
-}
-
-async function importReqFromExcel() {
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx';
-    input.onchange = async e => {
-        try {
-            let file = e.target.files[0],
-                arrayBuffer = await file.arrayBuffer(),
-                workbook = XLSX.read(arrayBuffer),
-                sheet = workbook.Sheets[workbook.SheetNames[0]],
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-            let headerRow = rows.findIndex(row => row && row.some(cell => cell && cell.toString().toLowerCase().includes('impa')));
-            if (headerRow === -1) throw new Error("未找到IMPA列");
-            let headers = rows[headerRow].map(cell => String(cell || '').toLowerCase());
-            let column = {
-                impa: headers.findIndex(h => h.includes('impa')),
-                desc: headers.findIndex(h => h.includes('description') || h.includes('物料描述')),
-                spec: headers.findIndex(h => h.includes('spec') || h.includes('规格')),
-                unit: headers.findIndex(h => h === '单位' || h === 'unit'),
-                qty: headers.findIndex(h => h.includes('申请数量') || h.includes('数量')),
-                remark: headers.findIndex(h => h.includes('备注'))
-            };
-            let materialMap = new Map(getCurrentMaterialArray().map(m => [m.impa, m]));
-            let itemsMap = new Map();
-            for (let i = headerRow + 1; i < rows.length; i++) {
-                let row = rows[i];
-                if (!row || !row[column.impa]) continue;
-                let impa = row[column.impa].toString().trim();
-                if (!materialMap.has(impa)) continue;
-                let material = materialMap.get(impa);
-                let qty = column.qty !== -1 ? Math.max(0, parseFloat(row[column.qty]) || 1) : 1;
-                let remark = column.remark !== -1 ? row[column.remark]?.toString().trim() || '' : '';
-                if (itemsMap.has(impa)) itemsMap.get(impa).quantity += qty;
-                else itemsMap.set(impa, { impa, description: material.description, spec: material.specification || '', unit: material.unit || '', quantity: qty, remark, manualStock: 0 });
-            }
-            currentApplication.items = Array.from(itemsMap.values());
-            renderRequestTable();
-            triggerAutoSave();
-            alert(`导入完成 ${currentApplication.items.length} 项`);
-        } catch (err) { alert("导入失败：" + err.message); }
-    };
-    input.click();
-}
-
-function triggerAutoSave() {
-    clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(() => persistCurrentApplication(false), 500);
-}
-
-function syncFormToApplication() {
-    currentApplication.reqNo = reqSerialInput.value;
-    currentApplication.applicant = applicantInput.value;
-    currentApplication.applyTime = applyTimeInput.value;
-    triggerAutoSave();
-}
-
-async function persistCurrentApplication(showToast) {
-    if (!currentApplication.reqNo) { let tempNo = `TEMP-${Date.now()}`; currentApplication.reqNo = tempNo; reqSerialInput.value = tempNo; }
-    await secureSetItem('app', currentApplication.reqNo, currentApplication);
-    if (showToast) autoSaveSpan.innerText = `✅ 已保存 ${currentApplication.reqNo}`;
-    addLog("保存申请单", currentApplication.reqNo);
-}
-
-async function refreshHistoryList() {
-    let keys = await secureStores.app.keys();
-    historyReqSelect.innerHTML = '<option value="">-- 已保存的申请单 --</option>';
-    keys.forEach(key => {
-        if (!key.startsWith('chunk_') && key !== 'meta') {
-            let option = document.createElement('option');
-            option.value = key;
-            option.textContent = key;
-            historyReqSelect.appendChild(option);
+        // 安全读写封装，自动加解密
+        async function secureSetItem(store, key, value) {
+            const encrypted = await encryptData(JSON.stringify(value));
+            await secureStores[store].setItem(key, encrypted);
+            // 同时写入 localStorage 备份
+            lsSet(store, key, encrypted);
         }
-    });
-}
-
-async function deleteHistoryItem(no) {
-    if (confirm(`删除 ${no} ？`)) {
-        await secureStores.app.removeItem(no);
-        await refreshHistoryList();
-        if (currentApplication.reqNo === no) {
-            currentApplication = { reqNo: '', applicant: '2/O', applyTime: '', items: [], ordered: false };
-            reqSerialInput.value = '';
-            applicantInput.value = '2/O';
-            applyTimeInput.value = '';
-            renderRequestTable();
-        }
-        addLog("删除申请单", no);
-        autoSaveSpan.innerText = `已删除 ${no}`;
-    }
-}
-
-async function loadApplication(no) {
-    let saved = await secureGetItem('app', no, null);
-    if (saved) {
-        currentApplication = saved;
-        currentApplication.items.forEach(item => { if (item.manualStock === undefined) item.manualStock = 0; if (item.remark === undefined) item.remark = ''; });
-        reqSerialInput.value = saved.reqNo || '';
-        applicantInput.value = saved.applicant || '2/O';
-        applyTimeInput.value = saved.applyTime || '';
-        renderRequestTable();
-        autoSaveSpan.innerText = `📋 已加载 ${no}`;
-    } else {
-        currentApplication = { reqNo: no, applicant: applicantInput.value, applyTime: applyTimeInput.value, items: [], ordered: false };
-        renderRequestTable();
-        await persistCurrentApplication(true);
-    }
-    saveUISettings();
-}
-
-function sortReqItems(field, skip = false) {
-    if (reqSortField === field) reqSortAsc = !reqSortAsc;
-    else { reqSortField = field; reqSortAsc = true; }
-    updateReqSortIndicators();
-    currentApplication.items.sort((a, b) => {
-        let avalue, bvalue;
-        if (field === 'stock') { avalue = a.manualStock ?? 0; bvalue = b.manualStock ?? 0; }
-        else if (field === 'quantity') { avalue = a.quantity || 0; bvalue = b.quantity || 0; }
-        else { avalue = (a[field] || '').toLowerCase(); bvalue = (b[field] || '').toLowerCase(); }
-        return avalue < bvalue ? (reqSortAsc ? -1 : 1) : avalue > bvalue ? (reqSortAsc ? 1 : -1) : 0;
-    });
-    if (!skip) renderRequestTable();
-    saveUISettings();
-}
-
-function updateReqSortIndicators() {
-    document.querySelectorAll('#reqTable th[data-sort] .sort-indicator').forEach(el => el.textContent = '');
-    if (reqSortField) {
-        let th = document.querySelector(`#reqTable th[data-sort="${reqSortField}"] .sort-indicator`);
-        if (th) th.textContent = reqSortAsc ? '▲' : '▼';
-    }
-}
-
-function performQuickSearch() {
-    let keyword = quickSearchInput.value.trim().toLowerCase();
-    if (!keyword) { quickSearchResultsDiv.style.display = 'none'; return; }
-    let library = getCurrentMaterialArray();
-    let filtered = library.filter(m => m.impa.toLowerCase().includes(keyword) || m.description.toLowerCase().includes(keyword)).slice(0, 15);
-    if (!filtered.length) { quickSearchTbody.innerHTML = '<tr><td colspan="5">未找到</td></tr>'; quickSearchResultsDiv.style.display = 'block'; return; }
-    let rows = '';
-    filtered.forEach(m => { rows += `<tr><td>${escapeHtml(m.impa)}</td><td>${escapeHtml(m.description)}</td><td>${escapeHtml(m.specification||'-')}</td><td>${escapeHtml(m.unit||'-')}</td><td><button class="add-quick-btn" data-impa="${escapeHtml(m.impa)}" data-desc="${escapeHtml(m.description)}" data-spec="${escapeHtml(m.specification||'')}" data-unit="${escapeHtml(m.unit||'')}" data-remark="${escapeHtml(m.remark||'')}"><i class="fas fa-plus"></i> 添加</button></td></tr>`; });
-    quickSearchTbody.innerHTML = rows;
-    quickSearchResultsDiv.style.display = 'block';
-}
-
-function initQuickAddDelegation() {
-    document.getElementById('quickSearchResults')?.addEventListener('click', e => {
-        let btn = e.target.closest('.add-quick-btn');
-        if (btn) addItemToRequest({ impa: btn.dataset.impa, description: btn.dataset.desc, specification: btn.dataset.spec, unit: btn.dataset.unit, remark: btn.dataset.remark });
-    });
-}
-
-function initReqTableDelegation() {
-    let table = document.getElementById('reqTable');
-    table?.addEventListener('change', e => {
-        let el = e.target;
-        if (el.classList && el.classList.contains('stock-manual-input')) {
-            let index = parseInt(el.dataset.originalIdx);
-            if (!isNaN(index) && currentApplication.items[index]) { currentApplication.items[index].manualStock = Math.max(0, parseFloat(el.value) || 0); triggerAutoSave(); }
-        } else if (el.classList && el.classList.contains('qty-input')) {
-            let index = parseInt(el.dataset.originalIdx);
-            if (!isNaN(index) && currentApplication.items[index]) { currentApplication.items[index].quantity = Math.max(0, parseFloat(el.value) || 1); triggerAutoSave(); }
-        } else if (el.classList && el.classList.contains('remark-input')) {
-            let index = parseInt(el.dataset.originalIdx);
-            if (!isNaN(index) && currentApplication.items[index]) { currentApplication.items[index].remark = el.value; triggerAutoSave(); }
-        }
-    });
-    table?.addEventListener('click', e => {
-        if (e.target.classList && e.target.classList.contains('delete-item') || e.target.closest('.delete-item')) {
-            let btn = e.target.closest('.delete-item');
-            if (btn) {
-                let index = parseInt(btn.dataset.originalIdx);
-                if (!isNaN(index) && currentApplication.items[index]) { currentApplication.items.splice(index, 1); triggerAutoSave(); renderRequestTable(); }
-            }
-        } else if (e.target.classList && e.target.classList.contains('req-item-checkbox')) bindSelectAllEvents();
-    });
-}
-
-function initMaterialEventDelegation() {
-    let container = document.getElementById('materialSearchBody');
-    container?.addEventListener('dblclick', async e => {
-        let target = e.target.closest('.inline-edit');
-        if (!target) return;
-        let impa = target.dataset.impa,
-            field = target.dataset.field,
-            array = getCurrentMaterialArray(),
-            material = array.find(m => m.impa === impa);
-        if (!material) return;
-        let oldValue = material[field] || '',
-            newValue = prompt(`编辑${field}`, oldValue);
-        if (newValue !== null && newValue !== oldValue) {
-            if (newValue.length > 200) newValue = newValue.substring(0, 200);
-            material[field] = newValue;
-            await saveFullMaterialArray(currentLang, array);
-            performMaterialSearch();
-            renderRequestTable();
-        }
-    });
-    container?.addEventListener('click', async e => {
-        let deleteButton = e.target.closest('.delete-material');
-        if (deleteButton && confirm("确定删除？")) {
-            let array = getCurrentMaterialArray().filter(m => m.impa !== deleteButton.dataset.impa);
-            await saveFullMaterialArray(currentLang, array);
-            performMaterialSearch();
-            renderRequestTable();
-            updateLibraryCountDisplay();
-        }
-    });
-}
-
-function initTabSwitching() {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => {
-        let id = btn.dataset.tab;
-        if (!id) return;
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active-pane'));
-        document.getElementById(id).classList.add('active-pane');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (id === 'materialTab') setTimeout(() => performMaterialSearch(), 30);
-        saveUISettings();
-    }));
-}
-
-async function importExcelFileWithProgress(type) {
-    if (!await requirePasswordAuth(`导入${type==='en'?'英文':'中文'}库`)) return;
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx';
-    input.onchange = async e => {
-        let file = e.target.files[0];
-        if (!file) return;
-        let progressArea = document.getElementById('importProgressArea'),
-            progressText = document.getElementById('importProgressText'),
-            progressFill = document.getElementById('importProgressFill');
-        progressArea.style.display = 'block';
-        progressText.innerText = '0%';
-        progressFill.style.width = '0%';
-        try {
-            let data = await file.arrayBuffer(),
-                workbook = XLSX.read(data),
-                sheet = workbook.Sheets[workbook.SheetNames[0]],
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-            if (rows.length < 2) throw new Error("无效文件");
-            let headers = rows[0].map(c => String(c || '').toLowerCase());
-            let idx = {
-                impa: headers.findIndex(h => h.includes('impa')),
-                desc: headers.findIndex(h => h.includes('description') || h.includes('物料描述')),
-                spec: headers.findIndex(h => h.includes('specification') || h.includes('规格')),
-                unit: headers.findIndex(h => h === '单位' || h === 'unit'),
-                remark: headers.findIndex(h => h === '备注' || h === 'remark')
-            };
-            if (idx.impa === -1) throw new Error("缺少IMPA列");
-            let list = [],
-                total = rows.length - 1;
-            for (let i = 1; i < rows.length; i += 400) {
-                let end = Math.min(i + 400, rows.length);
-                for (let j = i; j < end; j++) {
-                    let r = rows[j];
-                    if (!r || !r[idx.impa]) continue;
-                    let impa = r[idx.impa].toString().trim();
-                    if (!impa) continue;
-                    let desc = (idx.desc !== -1 && r[idx.desc]) ? r[idx.desc].toString().trim().substring(0, 200) : `IMPA ${impa}`;
-                    let remark = (idx.remark !== -1 && r[idx.remark]) ? r[idx.remark].toString().trim().substring(0, 200) : '';
-                    list.push({
-                        impa: impa.substring(0, 30),
-                        description: desc,
-                        specification: (idx.spec !== -1 && r[idx.spec]) ? r[idx.spec].toString().trim().substring(0, 100) : '',
-                        unit: (idx.unit !== -1 && r[idx.unit]) ? r[idx.unit].toString().trim().substring(0, 20) : '',
-                        remark
-                    });
-                    let pct = Math.round(((j - 1) / total) * 100);
-                    progressText.innerText = `${pct}%`;
-                    progressFill.style.width = `${pct}%`;
+        async function secureGetItem(store, key, defaultValue = null) {
+            // 优先从 localforage 读取
+            let encrypted = await secureStores[store].getItem(key);
+            if (!encrypted) {
+                // 尝试从 localStorage 恢复
+                encrypted = lsGet(store, key);
+                if (encrypted) {
+                    // 恢复到 localforage
+                    await secureStores[store].setItem(key, encrypted);
                 }
-                await new Promise(r => setTimeout(r, 0));
             }
-            let uniq = new Map();
-            for (let it of list)
-                if (!uniq.has(it.impa)) uniq.set(it.impa, it);
-            let final = ensureRemarkField(Array.from(uniq.values()));
-            await saveFullMaterialArray(type, final);
-            setTimeout(() => { performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay(); }, 120);
-            alert(`${type==='en'?'英文':'中文'}库导入完成，共 ${final.length} 条`);
-            addLog("导入物料库", `${type}库 ${final.length}条`);
-        } catch (err) { alert("导入失败:" + err.message); } finally { progressArea.style.display = 'none'; }
-    };
-    input.click();
-}
+            if (!encrypted) return defaultValue;
+            try { return JSON.parse(await decryptData(encrypted)); } catch (e) { return defaultValue; }
+        }
 
-async function addCustomMaterial() {
-    let impa = newImpa.value.trim().slice(0, 30),
-        desc = newDesc.value.trim().slice(0, 200);
-    if (!impa || !desc) return alert("IMPA和描述必填");
-    if (getCurrentMaterialArray().some(m => m.impa === impa)) return alert("IMPA已存在");
-    let newMat = { impa, description: desc, specification: newSpec.value.trim().slice(0, 100), unit: newUnit.value.trim().slice(0, 20), remark: newRemark.value.trim().slice(0, 200) };
-    let arr = getCurrentMaterialArray();
-    arr.push(newMat);
-    await saveFullMaterialArray(currentLang, arr);
-    performMaterialSearch();
-    updateLibraryCountDisplay();
-    newImpa.value = '';
-    newDesc.value = '';
-    newSpec.value = '';
-    newUnit.value = '';
-    newRemark.value = '';
-    alert(`物料 ${impa} 已添加`);
-    addLog("添加物料", impa);
-}
+        // 保存分片数据（双写）
+        async function saveChunkedData(storeName, fullArray) {
+            const allKeys = await secureStores[storeName].keys();
+            const oldChunkKeys = allKeys.filter(k => k.startsWith('chunk_'));
+            if (!fullArray.length) {
+                for (let key of oldChunkKeys) {
+                    await secureStores[storeName].removeItem(key);
+                    lsRemove(storeName, key);
+                }
+                await secureSetItem(storeName, 'meta', { chunkCount: 0, total: 0 });
+                return true;
+            }
+            const chunks = [];
+            for (let i = 0; i < fullArray.length; i += CHUNK_SIZE) {
+                chunks.push(fullArray.slice(i, i + CHUNK_SIZE));
+            }
+            for (let index = 0; index < chunks.length; index++) {
+                await secureSetItem(storeName, `chunk_${index}`, chunks[index]);
+                // 验证写入成功（直接读原始值）
+                let raw = await secureStores[storeName].getItem(`chunk_${index}`);
+                if (!raw) raw = lsGet(storeName, `chunk_${index}`);
+                if (!raw) throw new Error(`分片写入失败: ${storeName} chunk_${index}`);
+            }
+            // 删除多余旧分片
+            for (let key of oldChunkKeys) {
+                const idx = parseInt(key.split('_')[1]);
+                if (isNaN(idx) || idx >= chunks.length) {
+                    await secureStores[storeName].removeItem(key);
+                    lsRemove(storeName, key);
+                }
+            }
+            await secureSetItem(storeName, 'meta', { chunkCount: chunks.length, total: fullArray.length });
+            console.log(`保存完成：${storeName} ${fullArray.length} 条`);
+            return true;
+        }
 
-async function batchAddMaterialsFromExcel() {
-    if (!await requirePasswordAuth("批量追加物料")) return;
-    let input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx';
-    input.onchange = async e => {
-        let file = e.target.files[0];
-        if (!file) return;
-        let mode = confirm("确定=覆盖当前库  取消=合并追加");
-        try {
-            let data = await file.arrayBuffer(),
-                workbook = XLSX.read(data),
-                sheet = workbook.Sheets[workbook.SheetNames[0]],
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-            if (rows.length < 2) throw new Error("文件过短");
-            let headers = rows[0].map(c => String(c || '').toLowerCase());
-            let impaIdx = headers.findIndex(h => h.includes('impa')),
-                descIdx = headers.findIndex(h => h.includes('物料描述') || h.includes('description')),
-                specIdx = headers.findIndex(h => h.includes('规格')),
-                unitIdx = headers.findIndex(h => h === '单位' || h === 'unit'),
-                remarkIdx = headers.findIndex(h => h === '备注' || h === 'remark');
-            if (impaIdx === -1 || descIdx === -1) throw new Error("缺少IMPA或描述列");
-            let newMats = [];
-            for (let i = 1; i < rows.length; i++) {
-                let r = rows[i];
-                if (!r || !r[impaIdx]) continue;
-                let impa = String(r[impaIdx]).trim().slice(0, 30);
-                if (!impa) continue;
-                let desc = String(r[descIdx] || `IMPA ${impa}`).trim().slice(0, 200);
-                newMats.push({
-                    impa,
-                    description: desc,
-                    specification: specIdx !== -1 ? String(r[specIdx] || '').trim().slice(0, 100) : '',
-                    unit: unitIdx !== -1 ? String(r[unitIdx] || '').trim().slice(0, 20) : '',
-                    remark: remarkIdx !== -1 ? String(r[remarkIdx] || '').trim().slice(0, 200) : ''
+        // 加载分片数据（双源恢复）
+        async function loadChunkedData(storeName) {
+            let meta = await secureGetItem(storeName, 'meta', null);
+            if (!meta) {
+                // 尝试从 localStorage 直接读取 meta
+                const rawMeta = lsGet(storeName, 'meta');
+                if (rawMeta) {
+                    try { meta = JSON.parse(await decryptData(rawMeta)); } catch (e) {}
+                }
+            }
+            if (!meta || meta.total === 0) return [];
+            // 收集分片数据，依次从 localforage / localStorage 读取
+            const result = [];
+            for (let i = 0; i < meta.chunkCount; i++) {
+                let chunk = await secureGetItem(storeName, `chunk_${i}`, null);
+                if (!chunk) {
+                    // 最后尝试直接读 localStorage 原始值并解密
+                    const raw = lsGet(storeName, `chunk_${i}`);
+                    if (raw) {
+                        try { chunk = JSON.parse(await decryptData(raw)); } catch (e) {}
+                    }
+                }
+                if (chunk) result.push(...chunk);
+                else console.warn(`缺失分片 ${storeName} chunk_${i}`);
+            }
+            // 如果读取数量与 meta 不符，更新 meta
+            if (result.length !== meta.total) {
+                meta.total = result.length;
+                await secureSetItem(storeName, 'meta', meta);
+            }
+            return result;
+        }
+
+        async function loadAllSecureData() {
+            let enData = [], zhData = [];
+            try { enData = await loadChunkedData('en'); } catch (e) { console.error(e); enData = []; }
+            try { zhData = await loadChunkedData('zh'); } catch (e) { console.error(e); zhData = []; }
+            let apps = {};
+            const appKeys = await secureStores.app.keys();
+            for (let key of appKeys) {
+                if (key !== 'meta' && !key.startsWith('chunk_')) apps[key] = await secureGetItem('app', key, null);
+            }
+            return { en: enData, zh: zhData, apps };
+        }
+
+        function addLog(action, details) {
+            operationLogs.unshift({ timestamp: new Date().toISOString(), action, details: details || '' });
+            if (operationLogs.length > 500) operationLogs.pop();
+            if (cryptoKey) {
+                (async () => {
+                    localStorage.setItem('impa_audit_logs', await encryptData(JSON.stringify(operationLogs.slice(0, 300))));
+                })();
+            }
+        }
+        async function requirePasswordAuth(operation) {
+            return new Promise(resolve => {
+                let pwd = prompt(`🔐 安全验证: 执行「${operation}」需要主密码`, "");
+                if (pwd === null) resolve(false);
+                else verifyPassword(pwd).then(ok => {
+                    if (ok) { addLog("授权操作", operation); resolve(true); }
+                    else { alert("密码错误"); resolve(false); }
+                });
+            });
+        }
+        async function changePassword(oldPwd, newPwd, confirmPwd) {
+            if (newPwd !== confirmPwd) throw new Error("两次新密码不一致");
+            if (!await verifyPassword(oldPwd)) throw new Error("原密码错误");
+            alert("正在重新加密海量数据，请稍候...");
+            let { en, zh, apps } = await loadAllSecureData();
+            let newSalt = crypto.getRandomValues(new Uint8Array(16));
+            let newKey = await deriveKeyFromPassword(newPwd, newSalt);
+            let newHash = await computeAuthHash(newPwd, newSalt);
+            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newHash, version: 9 }));
+            cryptoKey = newKey;
+            await saveChunkedData('en', en);
+            await saveChunkedData('zh', zh);
+            for (let [k, v] of Object.entries(apps)) await secureSetItem('app', k, v);
+            addLog("密码修改", "已完成");
+            return true;
+        }
+
+        // ========== 业务全局变量 ==========
+        let materialDataEn = [], materialDataZh = [],
+            currentApplication = { reqNo: '', applicant: '2/O', applyTime: '', items: [], ordered: false },
+            autoSaveTimer = null, reqFilterKeyword = '', reqSearchField = 'all',
+            materialFilteredData = [], materialCurrentPage = 1, materialPageSize = 100, materialTotalPages = 1,
+            searchDebounceTimer = null, reqSearchDebounceTimer = null, quickSearchDebounce = null,
+            reqSortField = null, reqSortAsc = true,
+            reqColumnWidths = [32, 40, 100, 180, 150, 80, 100, 100, 120, 60],
+            materialColumnWidths = [50, 120, 200, 180, 80, 150, 60],
+            currentLang = 'zh';
+
+        // DOM 引用（完整保留）
+        const reqSerialInput = document.getElementById('reqSerial'),
+            applicantInput = document.getElementById('applicant'),
+            applyTimeInput = document.getElementById('applyTime'),
+            searchKeyword = document.getElementById('searchKeyword'),
+            materialSearchBody = document.getElementById('materialSearchBody'),
+            reqTableBody = document.getElementById('reqTableBody'),
+            itemCountBadge = document.getElementById('itemCountBadge'),
+            autoSaveSpan = document.getElementById('autoSaveStatus'),
+            toggleLangBtn = document.getElementById('toggleLangBtn'),
+            historyReqSelect = document.getElementById('historyReqSelect'),
+            refreshHistoryBtn = document.getElementById('refreshHistoryBtn'),
+            manualSaveBtn = document.getElementById('manualSaveBtn'),
+            exportExcelBtn = document.getElementById('exportExcelBtn'),
+            loadReqBtn = document.getElementById('loadReqBtn'),
+            newReqBtn = document.getElementById('newReqBtn'),
+            importReqFromExcelBtn = document.getElementById('importReqFromExcelBtn'),
+            reqSearchKeyword = document.getElementById('reqSearchKeyword'),
+            clearSearchBtn = document.getElementById('clearSearchBtn'),
+            selectAllCheckbox = document.getElementById('selectAllCheckbox'),
+            historyDeleteIconBtn = document.getElementById('historyDeleteIconBtn'),
+            currentLibraryCountSpan = document.getElementById('currentLibraryCount'),
+            reloadMaterialBtn = document.getElementById('reloadMaterialBtn'),
+            importEnBtn = document.getElementById('importEnBtn'),
+            importZhBtn = document.getElementById('importZhBtn'),
+            addCustomMaterialBtn = document.getElementById('addCustomMaterialBtn'),
+            newImpa = document.getElementById('newImpa'), newDesc = document.getElementById('newDesc'),
+            newSpec = document.getElementById('newSpec'), newUnit = document.getElementById('newUnit'),
+            newRemark = document.getElementById('newRemark'),
+            searchFieldSelect = document.getElementById('searchFieldSelect'),
+            reqSearchFieldSelect = document.getElementById('reqSearchFieldSelect'),
+            quickSearchInput = document.getElementById('quickSearchInput'),
+            quickSearchResultsDiv = document.getElementById('quickSearchResults'),
+            quickSearchTbody = document.getElementById('quickSearchTbody'),
+            clearQuickSearchBtn = document.getElementById('clearQuickSearchBtn'),
+            matFirstPage = document.getElementById('matFirstPage'), matPrevPage = document.getElementById('matPrevPage'),
+            matNextPage = document.getElementById('matNextPage'), matLastPage = document.getElementById('matLastPage'),
+            matPageSizeSelect = document.getElementById('matPageSizeSelect'),
+            matCurrentPageSpan = document.getElementById('matCurrentPageSpan'),
+            matTotalPagesSpan = document.getElementById('matTotalPagesSpan'),
+            batchDeleteReqBtn = document.getElementById('batchDeleteReqBtn'),
+            reqColgroup = document.getElementById('reqColgroup'),
+            materialColgroup = document.getElementById('materialColgroup'),
+            batchAddMaterialBtn = document.getElementById('batchAddMaterialBtn'),
+            clearLibraryBtn = document.getElementById('clearLibraryBtn');
+
+        function escapeHtml(text) { if (!text) return ''; return text.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+        function sanitizeExcelCell(value) { if (value == null) return ''; let s = String(value); if (s.length && '=+-@'.includes(s[0])) return "'" + s; return s; }
+        function getCurrentMaterialArray() { return currentLang === 'en' ? materialDataEn : materialDataZh; }
+        function ensureRemarkField(array) {
+            if (!Array.isArray(array)) return [];
+            array.forEach(item => { if (item && item.remark === undefined) item.remark = ''; });
+            return array;
+        }
+        async function saveFullMaterialArray(language, data) {
+            if (language === 'en') materialDataEn = data; else materialDataZh = data;
+            await saveChunkedData(language, data);
+            addLog("物料库变更", `${language==='en'?'英文':'中文'}库 ${data.length}条`);
+            localStorage.setItem(`last_material_save_${language}`, Date.now());
+            console.log(`物料库 ${language} 保存完成，${data.length} 条`);
+        }
+        function updateLibraryCountDisplay() { currentLibraryCountSpan.innerText = `${getCurrentMaterialArray().length} 条`; }
+        async function clearAllMaterialLibraries() {
+            if (!await requirePasswordAuth("清空全部物料库")) return;
+            if (confirm("⚠️ 危险操作：将清空【英文库】和【中文库】所有物料数据！")) {
+                await saveChunkedData('en', []);
+                await saveChunkedData('zh', []);
+                materialDataEn = []; materialDataZh = [];
+                performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay();
+                addLog("清空库", "所有物料数据已清空");
+                alert("物料库已完全清空");
+            }
+        }
+        async function reloadMaterialLibrary() {
+            try {
+                let { en, zh } = await loadAllSecureData();
+                materialDataEn = ensureRemarkField(Array.isArray(en) ? en : []);
+                materialDataZh = ensureRemarkField(Array.isArray(zh) ? zh : []);
+                performMaterialSearch(); updateLibraryCountDisplay();
+                alert(`物料库已刷新：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
+                console.log(`手动重载：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
+                addLog("手动重载物料库", `英文${materialDataEn.length} 中文${materialDataZh.length}`);
+            } catch (e) { alert("重载失败"); console.error(e); }
+        }
+
+        // 物料搜索与渲染
+        function performMaterialSearch() {
+            let keyword = searchKeyword.value.trim().toLowerCase(), field = searchFieldSelect.value,
+                currentArray = getCurrentMaterialArray();
+            if (!currentArray.length) {
+                materialFilteredData = []; materialTotalPages = 1; materialCurrentPage = 1;
+                renderMaterialTable(); updateMaterialPaginationControls(); return;
+            }
+            let filtered = keyword ? currentArray.filter(m => {
+                if (field === 'impa') return m.impa.toLowerCase().includes(keyword);
+                if (field === 'description') return m.description.toLowerCase().includes(keyword);
+                if (field === 'unit') return (m.unit||'').toLowerCase().includes(keyword);
+                if (field === 'remark') return (m.remark||'').toLowerCase().includes(keyword);
+                return m.impa.toLowerCase().includes(keyword) || m.description.toLowerCase().includes(keyword) || (m.unit||'').toLowerCase().includes(keyword) || (m.remark||'').toLowerCase().includes(keyword);
+            }) : currentArray.slice();
+            materialFilteredData = filtered;
+            materialTotalPages = Math.ceil(materialFilteredData.length / materialPageSize);
+            if (materialCurrentPage > materialTotalPages) materialCurrentPage = Math.max(1, materialTotalPages);
+            renderMaterialTable(); updateMaterialPaginationControls(); saveUISettings();
+        }
+        function renderMaterialTable() {
+            if (!materialFilteredData.length) { materialSearchBody.innerHTML = '<tr><td colspan="7">暂无物料</td></tr>'; return; }
+            let start = (materialCurrentPage-1)*materialPageSize, pageData = materialFilteredData.slice(start, start+materialPageSize);
+            let html = '';
+            pageData.forEach((item, idx) => {
+                let serial = start+idx+1;
+                html += `<tr data-impa="${escapeHtml(item.impa)}"><td>${serial}</td><td>${escapeHtml(item.impa)}</td><td><div class="inline-edit" data-field="description" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.description)}</div></td><td><div class="inline-edit" data-field="specification" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.specification||'')}</div></td><td><div class="inline-edit" data-field="unit" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.unit||'')}</div></td><td><div class="inline-edit" data-field="remark" data-impa="${escapeHtml(item.impa)}">${escapeHtml(item.remark||'')}</div></td><td><button class="delete-material" data-impa="${escapeHtml(item.impa)}"><i class="far fa-trash-alt"></i></button></td></tr>`;
+            });
+            materialSearchBody.innerHTML = html;
+            initResizeHandlers('materialSearchTable', false);
+        }
+        function updateMaterialPaginationControls() {
+            matFirstPage.disabled = materialCurrentPage === 1 || materialTotalPages === 0;
+            matPrevPage.disabled = materialCurrentPage === 1 || materialTotalPages === 0;
+            matNextPage.disabled = materialCurrentPage === materialTotalPages || materialTotalPages === 0;
+            matLastPage.disabled = materialCurrentPage === materialTotalPages || materialTotalPages === 0;
+            matCurrentPageSpan.innerText = materialCurrentPage;
+            matTotalPagesSpan.innerText = materialTotalPages || 1;
+        }
+        function goToMaterialPage(page) {
+            if (page<1) page=1; if (page>materialTotalPages) page=materialTotalPages;
+            if (materialCurrentPage !== page) { materialCurrentPage = page; renderMaterialTable(); updateMaterialPaginationControls(); saveUISettings(); }
+        }
+
+        // 申请单渲染
+        function renderRequestTable() {
+            let allItems = currentApplication.items;
+            let filtered = reqFilterKeyword.trim() ? allItems.filter(item => {
+                let kw = reqFilterKeyword.toLowerCase(), f = reqSearchField;
+                if (f==='impa') return item.impa.toLowerCase().includes(kw);
+                if (f==='description') return item.description.toLowerCase().includes(kw);
+                return item.impa.toLowerCase().includes(kw) || item.description.toLowerCase().includes(kw);
+            }) : allItems.slice();
+            if (reqSortField) {
+                const fieldMap = { stock:'manualStock', quantity:'quantity', impa:'impa', description:'description', spec:'spec', unit:'unit', remark:'remark' };
+                const actual = fieldMap[reqSortField] || reqSortField;
+                filtered.sort((a,b) => {
+                    let av, bv;
+                    if (actual==='manualStock') { av = a.manualStock??0; bv = b.manualStock??0; }
+                    else if (actual==='quantity') { av = a.quantity||0; bv = b.quantity||0; }
+                    else { av = (a[actual]||'').toLowerCase(); bv = (b[actual]||'').toLowerCase(); }
+                    return av<bv ? (reqSortAsc?-1:1) : av>bv ? (reqSortAsc?1:-1) : 0;
                 });
             }
-            if (!newMats.length) return alert("无有效数据");
-            let cur = getCurrentMaterialArray();
-            let final;
-            if (mode) { final = newMats; } else { let map = new Map(cur.map(m => [m.impa, m])); for (let m of newMats) if (!map.has(m.impa)) map.set(m.impa, m); final = Array.from(map.values()); }
-            await saveFullMaterialArray(currentLang, final);
-            performMaterialSearch();
-            renderRequestTable();
-            updateLibraryCountDisplay();
-            alert(`完成！当前库共 ${final.length} 条`);
-        } catch (err) { alert("批量导入失败:" + err.message); }
-    };
-    input.click();
-}
-
-function saveColumnWidths() {
-    localStorage.setItem('reqColWidths', JSON.stringify(reqColumnWidths));
-    localStorage.setItem('materialColWidths', JSON.stringify(materialColumnWidths));
-}
-
-function loadColumnWidths() {
-    try { let w = JSON.parse(localStorage.getItem('reqColWidths')); if (w && w.length === 10) reqColumnWidths = w; } catch (e) {}
-    try { let w = JSON.parse(localStorage.getItem('materialColWidths')); if (w && w.length === 7) materialColumnWidths = w; } catch (e) {}
-    applyColgroupWidths();
-}
-
-function applyColgroupWidths() {
-    if (reqColgroup) reqColgroup.innerHTML = reqColumnWidths.map(w => `<col style="width:${w}px;">`).join('');
-    if (materialColgroup) materialColgroup.innerHTML = materialColumnWidths.map(w => `<col style="width:${w}px;">`).join('');
-}
-
-function initResizeHandlers(tableId, isRequestTable) {
-    let table = document.getElementById(tableId);
-    if (!table) return;
-    let cols = isRequestTable ? reqColumnWidths : materialColumnWidths;
-    Array.from(table.querySelectorAll('thead th')).forEach((th, idx) => {
-        if (idx >= cols.length) return;
-        let handle = th.querySelector('.resize-handle');
-        if (handle) handle.remove();
-        handle = document.createElement('div');
-        handle.className = 'resize-handle';
-        handle.addEventListener('mousedown', e => {
-            e.preventDefault();
-            let startX = e.clientX,
-                startW = cols[idx];
-
-            function move(m) { let newWidth = startW + (m.clientX - startX); if (newWidth < 40) newWidth = 40; cols[idx] = newWidth; applyColgroupWidths(); saveColumnWidths(); }
-
-            function up() { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
-            document.addEventListener('mousemove', move);
-            document.addEventListener('mouseup', up);
+            if (!allItems.length) { reqTableBody.innerHTML = '<tr><td colspan="10">暂无物料</td></tr>'; itemCountBadge.innerText='0 项'; selectAllCheckbox.checked=false; return; }
+            let html = '';
+            filtered.forEach((item, di) => {
+                let orig = allItems.findIndex(i => i===item);
+                let ms = item.manualStock??0;
+                html += `<tr data-original-idx="${orig}"><td class="checkbox-col"><input type="checkbox" class="req-item-checkbox" data-original-idx="${orig}"></td><td>${di+1}</td><td>${escapeHtml(item.impa)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.spec||'-')}</td><td>${escapeHtml(item.unit||'-')}</td><td><input type="number" class="stock-manual-input" value="${ms}" step="any" min="0" data-original-idx="${orig}" style="width:90px;"></td><td><input type="number" class="qty-input" value="${item.quantity||1}" min="0" step="any" data-original-idx="${orig}" style="width:80px;"></td><td><input type="text" class="remark-input" placeholder="备注" value="${escapeHtml(item.remark||'')}" data-original-idx="${orig}" maxlength="200"></td><td><button class="delete-item" data-original-idx="${orig}"><i class="far fa-trash-alt"></i></button></td></tr>`;
+            });
+            reqTableBody.innerHTML = html;
+            itemCountBadge.innerText = `${allItems.length} 项`;
+            bindSelectAllEvents(); initResizeHandlers('reqTable', true);
+        }
+        function bindSelectAllEvents() {
+            let cbs = document.querySelectorAll('.req-item-checkbox');
+            if (!cbs.length) { selectAllCheckbox.checked=false; selectAllCheckbox.indeterminate=false; return; }
+            let all = Array.from(cbs).every(cb=>cb.checked);
+            selectAllCheckbox.checked = all;
+            selectAllCheckbox.indeterminate = (!all && Array.from(cbs).some(cb=>cb.checked));
+        }
+        function attachSelectAllEvent() {
+            document.querySelector('.table-wrapper')?.addEventListener('change', e => {
+                if (e.target && e.target.id==='selectAllCheckbox') {
+                    document.querySelectorAll('.req-item-checkbox').forEach(cb=>cb.checked=e.target.checked);
+                    bindSelectAllEvents();
+                }
+            });
+        }
+        function filterRequestTable() {
+            clearTimeout(reqSearchDebounceTimer);
+            reqSearchDebounceTimer = setTimeout(()=>{ reqFilterKeyword=reqSearchKeyword.value.trim(); reqSearchField=reqSearchFieldSelect.value; renderRequestTable(); saveUISettings(); },300);
+        }
+        function clearSearch() { reqSearchKeyword.value=''; reqFilterKeyword=''; renderRequestTable(); saveUISettings(); }
+        function addItemToRequest(material) {
+            if (currentApplication.items.some(item=>item.impa===material.impa)) { alert(`物料 ${material.impa} 已存在`); return false; }
+            currentApplication.items.push({ impa:material.impa, description:material.description, spec:material.specification||'', unit:material.unit||'', quantity:1, remark:material.remark||'', manualStock:0 });
+            triggerAutoSave(); renderRequestTable(); return true;
+        }
+        function batchDeleteReqItems() {
+            let cbs = document.querySelectorAll('.req-item-checkbox:checked');
+            if (!cbs.length) return alert("请先选中");
+            if (!confirm(`删除 ${cbs.length} 项？`)) return;
+            let indices = Array.from(cbs).map(cb=>parseInt(cb.dataset.originalIdx)).sort((a,b)=>b-a);
+            indices.forEach(i=>{ if (!isNaN(i)) currentApplication.items.splice(i,1); });
+            triggerAutoSave(); renderRequestTable();
+        }
+        function exportToExcel() {
+            if (!currentApplication.reqNo) return alert("请填写申请次序号");
+            let data = [["物料申请单","","","","","",""],["申请次序号",currentApplication.reqNo,"申请人",currentApplication.applicant,"申请时间",currentApplication.applyTime||"",""],[],["IMPA","物料描述","规格型号","单位","库存","申请数量","备注"]];
+            currentApplication.items.forEach(item=>data.push([sanitizeExcelCell(item.impa),sanitizeExcelCell(item.description),sanitizeExcelCell(item.spec),sanitizeExcelCell(item.unit),sanitizeExcelCell(item.manualStock??0),sanitizeExcelCell(item.quantity),sanitizeExcelCell(item.remark)]));
+            let ws = XLSX.utils.aoa_to_sheet(data); ws['!cols']=[{wch:14},{wch:34},{wch:20},{wch:8},{wch:12},{wch:10},{wch:20}];
+            let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"物料申请单");
+            XLSX.writeFile(wb,`物料申请单_${currentApplication.reqNo}.xlsx`); addLog("导出申请单",currentApplication.reqNo);
+        }
+        function triggerAutoSave() { clearTimeout(autoSaveTimer); autoSaveTimer = setTimeout(()=>persistCurrentApplication(false),500); }
+        function syncFormToApplication() { currentApplication.reqNo=reqSerialInput.value; currentApplication.applicant=applicantInput.value; currentApplication.applyTime=applyTimeInput.value; triggerAutoSave(); }
+        async function persistCurrentApplication(showToast) {
+            if (!currentApplication.reqNo) { let t = `TEMP-${Date.now()}`; currentApplication.reqNo=t; reqSerialInput.value=t; }
+            await secureSetItem('app',currentApplication.reqNo,currentApplication);
+            if (showToast) autoSaveSpan.innerText=`✅ 已保存 ${currentApplication.reqNo}`;
+            addLog("保存申请单",currentApplication.reqNo);
+        }
+        async function refreshHistoryList() {
+            let keys = await secureStores.app.keys();
+            historyReqSelect.innerHTML = '<option value="">-- 已保存的申请单 --</option>';
+            keys.forEach(k=>{ if (!k.startsWith('chunk_')&&k!=='meta') { let o=document.createElement('option'); o.value=k; o.textContent=k; historyReqSelect.appendChild(o); } });
+        }
+        async function deleteHistoryItem(no) {
+            if (confirm(`删除 ${no} ？`)) {
+                await secureStores.app.removeItem(no); localStorage.removeItem(`${LS_PREFIX}app_${no}`);
+                await refreshHistoryList();
+                if (currentApplication.reqNo===no) {
+                    currentApplication = { reqNo:'', applicant:'2/O', applyTime:'', items:[], ordered:false };
+                    reqSerialInput.value=''; applicantInput.value='2/O'; applyTimeInput.value=''; renderRequestTable();
+                }
+                addLog("删除申请单",no); autoSaveSpan.innerText=`已删除 ${no}`;
+            }
+        }
+        async function loadApplication(no) {
+            let saved = await secureGetItem('app',no,null);
+            if (saved) {
+                currentApplication = saved;
+                currentApplication.items.forEach(item=>{ if (item.manualStock===undefined) item.manualStock=0; if (item.remark===undefined) item.remark=''; });
+                reqSerialInput.value = saved.reqNo||''; applicantInput.value = saved.applicant||'2/O'; applyTimeInput.value = saved.applyTime||'';
+                renderRequestTable(); autoSaveSpan.innerText=`📋 已加载 ${no}`;
+            } else {
+                currentApplication = { reqNo:no, applicant:applicantInput.value, applyTime:applyTimeInput.value, items:[], ordered:false };
+                renderRequestTable(); await persistCurrentApplication(true);
+            }
+            saveUISettings();
+        }
+        function sortReqItems(field, skip=false) {
+            if (reqSortField===field) reqSortAsc=!reqSortAsc; else { reqSortField=field; reqSortAsc=true; }
+            updateReqSortIndicators(); if (!skip) renderRequestTable(); saveUISettings();
+        }
+        function updateReqSortIndicators() {
+            document.querySelectorAll('#reqTable th[data-sort] .sort-indicator').forEach(el=>el.textContent='');
+            if (reqSortField) { let th=document.querySelector(`#reqTable th[data-sort="${reqSortField}"] .sort-indicator`); if (th) th.textContent=reqSortAsc?'▲':'▼'; }
+        }
+        function performQuickSearch() {
+            let kw = quickSearchInput.value.trim().toLowerCase();
+            if (!kw) { quickSearchResultsDiv.style.display='none'; return; }
+            let library = getCurrentMaterialArray();
+            let filtered = library.filter(m=>m.impa.toLowerCase().includes(kw)||m.description.toLowerCase().includes(kw)).slice(0,20);
+            if (!filtered.length) { quickSearchTbody.innerHTML='<tr><td colspan="5">未找到</td></tr>'; quickSearchResultsDiv.style.display='block'; return; }
+            let rows='';
+            filtered.forEach(m=>{ rows+=`<tr><td>${escapeHtml(m.impa)}</td><td>${escapeHtml(m.description)}</td><td>${escapeHtml(m.specification||'-')}</td><td>${escapeHtml(m.unit||'-')}</td><td><button class="add-quick-btn" data-impa="${escapeHtml(m.impa)}" data-desc="${escapeHtml(m.description)}" data-spec="${escapeHtml(m.specification||'')}" data-unit="${escapeHtml(m.unit||'')}" data-remark="${escapeHtml(m.remark||'')}"><i class="fas fa-plus"></i> 添加</button></td></tr>`; });
+            quickSearchTbody.innerHTML=rows; quickSearchResultsDiv.style.display='block';
+        }
+        function initQuickAddDelegation() {
+            document.getElementById('quickSearchResults')?.addEventListener('click', e => {
+                let btn = e.target.closest('.add-quick-btn');
+                if (btn) addItemToRequest({ impa:btn.dataset.impa, description:btn.dataset.desc, specification:btn.dataset.spec, unit:btn.dataset.unit, remark:btn.dataset.remark });
+            });
+        }
+        function initReqTableDelegation() {
+            let table = document.getElementById('reqTable');
+            table?.addEventListener('change', e => {
+                let el = e.target;
+                if (el.classList.contains('stock-manual-input')) {
+                    let idx = parseInt(el.dataset.originalIdx);
+                    if (!isNaN(idx)&&currentApplication.items[idx]) { currentApplication.items[idx].manualStock = Math.max(0,parseFloat(el.value)||0); triggerAutoSave(); }
+                } else if (el.classList.contains('qty-input')) {
+                    let idx = parseInt(el.dataset.originalIdx);
+                    if (!isNaN(idx)&&currentApplication.items[idx]) { currentApplication.items[idx].quantity = Math.max(0,parseFloat(el.value)||1); triggerAutoSave(); }
+                } else if (el.classList.contains('remark-input')) {
+                    let idx = parseInt(el.dataset.originalIdx);
+                    if (!isNaN(idx)&&currentApplication.items[idx]) { currentApplication.items[idx].remark = el.value; triggerAutoSave(); }
+                }
+            });
+            table?.addEventListener('click', e => {
+                if (e.target.classList.contains('delete-item') || e.target.closest('.delete-item')) {
+                    let btn = e.target.closest('.delete-item');
+                    if (btn) { let idx=parseInt(btn.dataset.originalIdx); if (!isNaN(idx)&&currentApplication.items[idx]) { currentApplication.items.splice(idx,1); triggerAutoSave(); renderRequestTable(); } }
+                } else if (e.target.classList.contains('req-item-checkbox')) bindSelectAllEvents();
+            });
+        }
+        function initMaterialEventDelegation() {
+            let container = document.getElementById('materialSearchBody');
+            container?.addEventListener('dblclick', async e => {
+                let target = e.target.closest('.inline-edit');
+                if (!target) return;
+                let impa = target.dataset.impa, field = target.dataset.field, array = getCurrentMaterialArray(), material = array.find(m=>m.impa===impa);
+                if (!material) return;
+                let old = material[field]||'', newVal = prompt(`编辑${field}`, old);
+                if (newVal!==null && newVal!==old) { if (newVal.length>200) newVal=newVal.substring(0,200); material[field]=newVal; await saveFullMaterialArray(currentLang,array); performMaterialSearch(); renderRequestTable(); }
+            });
+            container?.addEventListener('click', async e => {
+                let del = e.target.closest('.delete-material');
+                if (del && confirm("确定删除？")) {
+                    let array = getCurrentMaterialArray().filter(m=>m.impa!==del.dataset.impa);
+                    await saveFullMaterialArray(currentLang,array); performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay();
+                }
+            });
+        }
+        function initTabSwitching() {
+            document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+                let id=btn.dataset.tab; if(!id)return;
+                document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active-pane'));
+                document.getElementById(id).classList.add('active-pane');
+                document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                if (id==='materialTab') setTimeout(()=>performMaterialSearch(),30);
+                saveUISettings();
+            }));
+        }
+        async function importExcelFileWithProgress(type) {
+            if (!await requirePasswordAuth(`导入${type==='en'?'英文':'中文'}库`)) return;
+            let input = document.createElement('input'); input.type='file'; input.accept='.xlsx';
+            input.onchange = async e => {
+                let file = e.target.files[0]; if(!file)return;
+                let progressArea=document.getElementById('importProgressArea'), progressText=document.getElementById('importProgressText'), progressFill=document.getElementById('importProgressFill');
+                progressArea.style.display='block'; progressText.innerText='0%'; progressFill.style.width='0%';
+                try {
+                    let data = await file.arrayBuffer(), wb = XLSX.read(data), sheet = wb.Sheets[wb.SheetNames[0]], rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+                    if(rows.length<2) throw new Error("无效文件");
+                    let headers = rows[0].map(c=>String(c||'').toLowerCase());
+                    let idx = { impa:headers.findIndex(h=>h.includes('impa')), desc:headers.findIndex(h=>h.includes('description')||h.includes('物料描述')), spec:headers.findIndex(h=>h.includes('specification')||h.includes('规格')), unit:headers.findIndex(h=>h==='单位'||h==='unit'), remark:headers.findIndex(h=>h==='备注'||h==='remark') };
+                    if(idx.impa===-1) throw new Error("缺少IMPA列");
+                    let list=[], total=rows.length-1;
+                    for(let i=1;i<rows.length;i+=400){
+                        let end=Math.min(i+400,rows.length);
+                        for(let j=i;j<end;j++){
+                            let r=rows[j]; if(!r||!r[idx.impa])continue;
+                            let impa=r[idx.impa].toString().trim(); if(!impa)continue;
+                            let desc=(idx.desc!==-1&&r[idx.desc])?r[idx.desc].toString().trim().substring(0,200):`IMPA ${impa}`;
+                            let remark=(idx.remark!==-1&&r[idx.remark])?r[idx.remark].toString().trim().substring(0,200):'';
+                            list.push({ impa:impa.substring(0,30), description:desc, specification:(idx.spec!==-1&&r[idx.spec])?r[idx.spec].toString().trim().substring(0,100):'', unit:(idx.unit!==-1&&r[idx.unit])?r[idx.unit].toString().trim().substring(0,20):'', remark });
+                            let pct=Math.round(((j-1)/total)*100); progressText.innerText=`${pct}%`; progressFill.style.width=`${pct}%`;
+                        }
+                        await new Promise(r=>setTimeout(r,0));
+                    }
+                    let uniq=new Map(); list.forEach(it=>{ if(!uniq.has(it.impa)) uniq.set(it.impa,it); });
+                    let final = ensureRemarkField(Array.from(uniq.values()));
+                    await saveFullMaterialArray(type,final);
+                    setTimeout(()=>{ performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay(); },120);
+                    alert(`${type==='en'?'英文':'中文'}库导入完成，共 ${final.length} 条`);
+                    addLog("导入物料库",`${type}库 ${final.length}条`);
+                } catch(err){ alert("导入失败:"+err.message); } finally { progressArea.style.display='none'; }
+            };
+            input.click();
+        }
+        async function addCustomMaterial() {
+            let impa = newImpa.value.trim().slice(0,30), desc = newDesc.value.trim().slice(0,200);
+            if(!impa||!desc) return alert("IMPA和描述必填");
+            if(getCurrentMaterialArray().some(m=>m.impa===impa)) return alert("IMPA已存在");
+            let newMat = { impa, description:desc, specification:newSpec.value.trim().slice(0,100), unit:newUnit.value.trim().slice(0,20), remark:newRemark.value.trim().slice(0,200) };
+            let arr = getCurrentMaterialArray(); arr.push(newMat);
+            await saveFullMaterialArray(currentLang,arr); performMaterialSearch(); updateLibraryCountDisplay();
+            newImpa.value=''; newDesc.value=''; newSpec.value=''; newUnit.value=''; newRemark.value='';
+            alert(`物料 ${impa} 已添加`); addLog("添加物料",impa);
+        }
+        async function batchAddMaterialsFromExcel() {
+            if (!await requirePasswordAuth("批量追加物料")) return;
+            let input = document.createElement('input'); input.type='file'; input.accept='.xlsx';
+            input.onchange = async e => {
+                let file = e.target.files[0]; if(!file)return;
+                let mode = confirm("确定=覆盖当前库  取消=合并追加");
+                try {
+                    let data = await file.arrayBuffer(), wb = XLSX.read(data), sheet = wb.Sheets[wb.SheetNames[0]], rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+                    if(rows.length<2) throw new Error("文件过短");
+                    let headers = rows[0].map(c=>String(c||'').toLowerCase());
+                    let impaIdx = headers.findIndex(h=>h.includes('impa')), descIdx = headers.findIndex(h=>h.includes('物料描述')||h.includes('description')), specIdx = headers.findIndex(h=>h.includes('规格')), unitIdx = headers.findIndex(h=>h==='单位'||h==='unit'), remarkIdx = headers.findIndex(h=>h==='备注'||h==='remark');
+                    if(impaIdx===-1||descIdx===-1) throw new Error("缺少IMPA或描述列");
+                    let newMats=[];
+                    for(let i=1;i<rows.length;i++){ let r=rows[i]; if(!r||!r[impaIdx])continue; let impa=String(r[impaIdx]).trim().slice(0,30); if(!impa)continue; let desc=String(r[descIdx]||`IMPA ${impa}`).trim().slice(0,200); newMats.push({ impa, description:desc, specification:specIdx!==-1?String(r[specIdx]||'').trim().slice(0,100):'', unit:unitIdx!==-1?String(r[unitIdx]||'').trim().slice(0,20):'', remark:remarkIdx!==-1?String(r[remarkIdx]||'').trim().slice(0,200):'' }); }
+                    if(!newMats.length) return alert("无有效数据");
+                    let cur = getCurrentMaterialArray();
+                    let final;
+                    if(mode){ final=newMats; } else { let map=new Map(cur.map(m=>[m.impa,m])); newMats.forEach(m=>{ if(!map.has(m.impa)) map.set(m.impa,m); }); final=Array.from(map.values()); }
+                    await saveFullMaterialArray(currentLang,final); performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay();
+                    alert(`完成！当前库共 ${final.length} 条`);
+                } catch(err){ alert("批量导入失败:"+err.message); }
+            };
+            input.click();
+        }
+        function saveColumnWidths() { localStorage.setItem('reqColWidths',JSON.stringify(reqColumnWidths)); localStorage.setItem('materialColWidths',JSON.stringify(materialColumnWidths)); }
+        function loadColumnWidths() { try{let w=JSON.parse(localStorage.getItem('reqColWidths'));if(w&&w.length===10)reqColumnWidths=w;}catch(e){} try{let w=JSON.parse(localStorage.getItem('materialColWidths'));if(w&&w.length===7)materialColumnWidths=w;}catch(e){} applyColgroupWidths(); }
+        function applyColgroupWidths() { if(reqColgroup) reqColgroup.innerHTML=reqColumnWidths.map(w=>`<col style="width:${w}px;">`).join(''); if(materialColgroup) materialColgroup.innerHTML=materialColumnWidths.map(w=>`<col style="width:${w}px;">`).join(''); }
+        function initResizeHandlers(tableId, isReq){ let table=document.getElementById(tableId); if(!table)return; let cols=isReq?reqColumnWidths:materialColumnWidths; Array.from(table.querySelectorAll('thead th')).forEach((th,idx)=>{ if(idx>=cols.length)return; let handle=th.querySelector('.resize-handle'); if(handle)handle.remove(); handle=document.createElement('div'); handle.className='resize-handle'; handle.addEventListener('mousedown',e=>{ e.preventDefault(); let startX=e.clientX,startW=cols[idx]; function move(m){ let w=startW+(m.clientX-startX); if(w<40)w=40; cols[idx]=w; applyColgroupWidths(); saveColumnWidths(); } function up(){ document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); } document.addEventListener('mousemove',move); document.addEventListener('mouseup',up); }); th.style.position='relative'; th.appendChild(handle); }); }
+        function saveUISettings() {
+            localStorage.setItem('ui_activeTab',document.querySelector('.tab-btn.active')?.dataset.tab||'reqTab');
+            localStorage.setItem('ui_currentLang',currentLang);
+            localStorage.setItem('ui_reqSortField',reqSortField||''); localStorage.setItem('ui_reqSortAsc',reqSortAsc);
+            localStorage.setItem('ui_reqSearchKeyword',reqSearchKeyword.value||''); localStorage.setItem('ui_reqSearchField',reqSearchFieldSelect.value);
+            localStorage.setItem('ui_materialSearchKeyword',searchKeyword.value||''); localStorage.setItem('ui_materialSearchField',searchFieldSelect.value);
+            localStorage.setItem('ui_materialPageSize',materialPageSize); localStorage.setItem('ui_materialCurrentPage',materialCurrentPage);
+            localStorage.setItem('ui_quickSearchKeyword',quickSearchInput.value||'');
+            if(currentApplication.reqNo) localStorage.setItem('ui_lastReqNo',currentApplication.reqNo);
+        }
+        function loadUISettings() {
+            let savedTab=localStorage.getItem('ui_activeTab'); if(savedTab) document.querySelector(`.tab-btn[data-tab="${savedTab}"]`)?.click();
+            let savedLang=localStorage.getItem('ui_currentLang'); if(savedLang==='en'||savedLang==='zh'){ currentLang=savedLang; updateLibraryUI(); }
+            let savedSort=localStorage.getItem('ui_reqSortField'); if(savedSort){ reqSortField=savedSort; reqSortAsc=localStorage.getItem('ui_reqSortAsc')==='true'; updateReqSortIndicators(); if(reqSortField) sortReqItems(reqSortField,true); }
+            reqSearchKeyword.value=localStorage.getItem('ui_reqSearchKeyword')||''; reqSearchFieldSelect.value=localStorage.getItem('ui_reqSearchField')||'all';
+            searchKeyword.value=localStorage.getItem('ui_materialSearchKeyword')||''; searchFieldSelect.value=localStorage.getItem('ui_materialSearchField')||'all';
+            let ps=parseInt(localStorage.getItem('ui_materialPageSize')); if(ps){ materialPageSize=ps; matPageSizeSelect.value=ps; }
+            let p=parseInt(localStorage.getItem('ui_materialCurrentPage')); if(p&&p>0) materialCurrentPage=p;
+            quickSearchInput.value=localStorage.getItem('ui_quickSearchKeyword')||''; if(quickSearchInput.value.trim()) performQuickSearch();
+            filterRequestTable(); performMaterialSearch();
+        }
+        function updateLibraryUI() {
+            document.getElementById('langText').innerText = currentLang==='en'?'EN':'中';
+            quickSearchInput.value=''; quickSearchResultsDiv.style.display='none';
+            performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay(); saveUISettings();
+        }
+        function getLocalDatetimeString(date) { const d=date||new Date(); const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+        function bindEvents() {
+            initTabSwitching();
+            reloadMaterialBtn.onclick=reloadMaterialLibrary; importEnBtn.onclick=()=>importExcelFileWithProgress('en'); importZhBtn.onclick=()=>importExcelFileWithProgress('zh');
+            exportExcelBtn.onclick=exportToExcel; loadReqBtn.onclick=async()=>{ let no=reqSerialInput.value.trim(); if(no) await loadApplication(no); else alert("请输入次序号"); };
+            newReqBtn.onclick=async()=>{ let no=prompt("新申请次序号",`REQ-${Date.now().toString().slice(-6)}`); if(no){ reqSerialInput.value=no; applicantInput.value="2/O"; applyTimeInput.value=getLocalDatetimeString(); await loadApplication(no); } };
+            manualSaveBtn.onclick=()=>persistCurrentApplication(true);
+            searchKeyword.oninput=()=>{ clearTimeout(searchDebounceTimer); searchDebounceTimer=setTimeout(()=>performMaterialSearch(),300); };
+            searchFieldSelect.onchange=()=>performMaterialSearch(); reqSearchFieldSelect.onchange=filterRequestTable;
+            reqSerialInput.onchange=applicantInput.onchange=applyTimeInput.onchange=syncFormToApplication;
+            toggleLangBtn.onclick=()=>{ currentLang=currentLang==='en'?'zh':'en'; updateLibraryUI(); };
+            refreshHistoryBtn.onclick=refreshHistoryList; historyReqSelect.onchange=async e=>{ if(e.target.value) await loadApplication(e.target.value); };
+            importReqFromExcelBtn.onclick=importReqFromExcel; reqSearchKeyword.oninput=filterRequestTable; clearSearchBtn.onclick=clearSearch;
+            historyDeleteIconBtn.onclick=async()=>{ let val=historyReqSelect.value; if(val) await deleteHistoryItem(val); else alert("请选择"); };
+            addCustomMaterialBtn.onclick=addCustomMaterial;
+            document.querySelectorAll('#reqTable th[data-sort]').forEach(th=>th.onclick=()=>sortReqItems(th.dataset.sort));
+            quickSearchInput.oninput=()=>{ clearTimeout(quickSearchDebounce); quickSearchDebounce=setTimeout(()=>performQuickSearch(),300); };
+            clearQuickSearchBtn.onclick=()=>{ quickSearchInput.value=''; quickSearchResultsDiv.style.display='none'; saveUISettings(); };
+            matFirstPage.onclick=()=>goToMaterialPage(1); matPrevPage.onclick=()=>goToMaterialPage(materialCurrentPage-1); matNextPage.onclick=()=>goToMaterialPage(materialCurrentPage+1); matLastPage.onclick=()=>goToMaterialPage(materialTotalPages);
+            matPageSizeSelect.onchange=e=>{ materialPageSize=parseInt(e.target.value); materialCurrentPage=1; performMaterialSearch(); saveUISettings(); };
+            batchDeleteReqBtn.onclick=batchDeleteReqItems; attachSelectAllEvent(); batchAddMaterialBtn.onclick=batchAddMaterialsFromExcel; clearLibraryBtn.onclick=clearAllMaterialLibraries;
+        }
+        async function importReqFromExcel() {
+            let input=document.createElement('input'); input.type='file'; input.accept='.xlsx';
+            input.onchange=async e=>{
+                try{
+                    let file=e.target.files[0], arrayBuffer=await file.arrayBuffer(), wb=XLSX.read(arrayBuffer), sheet=wb.Sheets[wb.SheetNames[0]], rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+                    let headerRow=rows.findIndex(row=>row&&row.some(cell=>cell&&cell.toString().toLowerCase().includes('impa'))); if(headerRow===-1) throw new Error("未找到IMPA列");
+                    let headers=rows[headerRow].map(c=>String(c||'').toLowerCase()), originalHeaders=rows[headerRow];
+                    let col={ impa:headers.findIndex(h=>h.includes('impa')), desc:headers.findIndex(h=>h.includes('description')||h.includes('物料描述')), spec:headers.findIndex(h=>h.includes('spec')||h.includes('规格')), unit:headers.findIndex(h=>h==='单位'||h==='unit'), qty:headers.findIndex(h=>h.includes('申请数量')||h.includes('数量')), remark:headers.findIndex(h=>h.includes('备注')) };
+                    let materialMap=new Map(getCurrentMaterialArray().map(m=>[m.impa,m])), itemsMap=new Map(), failedRows=[];
+                    for(let i=headerRow+1;i<rows.length;i++){ let row=rows[i]; if(!row||!row[col.impa])continue; let impa=row[col.impa].toString().trim(); if(!materialMap.has(impa)){ failedRows.push(row); continue; } let material=materialMap.get(impa); let qty=col.qty!==-1?Math.max(0,parseFloat(row[col.qty])||1):1; let remark=col.remark!==-1?row[col.remark]?.toString().trim()||'':''; if(itemsMap.has(impa)) itemsMap.get(impa).quantity+=qty; else itemsMap.set(impa,{ impa, description:material.description, spec:material.specification||'', unit:material.unit||'', quantity:qty, remark, manualStock:0 }); }
+                    let successCount=itemsMap.size, failCount=failedRows.length; currentApplication.items=Array.from(itemsMap.values()); renderRequestTable(); triggerAutoSave();
+                    if(failCount>0){ let exportData=[originalHeaders,...failedRows]; let ws=XLSX.utils.aoa_to_sheet(exportData), wb2=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb2,ws,"导入失败项"); XLSX.writeFile(wb2,`申请单导入失败项_${new Date().toISOString().slice(0,10)}.xlsx`); }
+                    alert(`导入完成！成功 ${successCount} 项，失败 ${failCount} 项${failCount>0?'，失败项已导出为Excel':''}`);
+                }catch(err){ alert("导入失败："+err.message); }
+            };
+            input.click();
+        }
+        async function init() {
+            loadColumnWidths();
+            let { en, zh } = await loadAllSecureData();
+            materialDataEn = ensureRemarkField(Array.isArray(en)?en:[]);
+            materialDataZh = ensureRemarkField(Array.isArray(zh)?zh:[]);
+            console.log(`物料库加载完成：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
+            if (materialDataEn.length===0 && materialDataZh.length===0 && (localStorage.getItem('last_material_save_en')||localStorage.getItem('last_material_save_zh'))) {
+                autoSaveSpan.innerHTML += ' <span style="color:#c0392b;">⚠️ 物料库为空，可尝试刷新库或重新导入。</span>';
+            }
+            bindEvents(); initMaterialEventDelegation(); initQuickAddDelegation(); initReqTableDelegation();
+            await refreshHistoryList(); loadUISettings();
+            let lastReqNo=localStorage.getItem('ui_lastReqNo');
+            if (lastReqNo && await secureGetItem('app',lastReqNo,null)) await loadApplication(lastReqNo);
+            else {
+                let demoNo = `REQ-${new Date().toISOString().slice(0,10)}`;
+                reqSerialInput.value=demoNo; applicantInput.value="2/O"; applyTimeInput.value=getLocalDatetimeString();
+                await loadApplication(demoNo);
+            }
+            window.onbeforeunload = () => { if(currentApplication.reqNo) persistCurrentApplication(false); saveUISettings(); };
+            updateLibraryCountDisplay(); updateReqSortIndicators(); applyColgroupWidths();
+            setTimeout(()=>{ initResizeHandlers('reqTable',true); initResizeHandlers('materialSearchTable',false); },200);
+            if (location.protocol === 'file:') {
+                setTimeout(()=> alert('⚠️ 检测到您正通过 file:// 协议打开，部分浏览器可能限制存储。建议使用本地HTTP服务器打开，或信任此页面。数据已启用双重备份（IndexedDB + localStorage），刷新后若数据丢失，可尝试点击物料库的“刷新库”按钮恢复。'), 1000);
+            }
+        }
+        async function startAuth() {
+            let meta = localStorage.getItem(META_KEY), overlay=document.getElementById('authOverlay'), pwd1=document.getElementById('authPassword1'), pwd2=document.getElementById('authPassword2'), title=document.getElementById('authTitle'), submit=document.getElementById('authSubmitBtn'), err=document.getElementById('authError'), pwd2c=document.getElementById('pwd2Container');
+            if (!meta) {
+                title.innerHTML='<i class="fas fa-lock"></i> 首次使用：设定主密码 (AES-256)'; pwd2c.style.display='block';
+                submit.onclick=async()=>{
+                    if(!pwd1.value||pwd1.value!==pwd2.value){ err.innerText="密码不一致"; return; }
+                    if(pwd1.value.length<6){ err.innerText="至少6位"; return; }
+                    await setupMasterPassword(pwd1.value);
+                    document.getElementById('mainApp').style.display='block'; overlay.style.display='none'; await init();
+                };
+            } else {
+                title.innerHTML='<i class="fas fa-key"></i> 请输入主密码解锁'; pwd2c.style.display='none';
+                submit.onclick=async()=>{
+                    if(await verifyPassword(pwd1.value)){ document.getElementById('mainApp').style.display='block'; overlay.style.display='none'; await init(); }
+                    else err.innerText="密码错误";
+                };
+            }
+        }
+        startAuth();
+        document.getElementById('changePasswordBtn')?.addEventListener('click', async()=>{
+            let old=prompt("当前主密码"); if(!old)return;
+            let n1=prompt("新密码 (最少6位)"); if(!n1||n1.length<6){ alert("至少6位"); return; }
+            let n2=prompt("确认新密码");
+            try{ await changePassword(old,n1,n2); alert("密码修改成功！"); }catch(e){ alert(e.message); }
         });
-        th.style.position = 'relative';
-        th.appendChild(handle);
-    });
-}
-
-function saveUISettings() {
-    localStorage.setItem('ui_activeTab', document.querySelector('.tab-btn.active')?.dataset.tab || 'reqTab');
-    localStorage.setItem('ui_currentLang', currentLang);
-    localStorage.setItem('ui_reqSortField', reqSortField || '');
-    localStorage.setItem('ui_reqSortAsc', reqSortAsc);
-    localStorage.setItem('ui_reqSearchKeyword', reqSearchKeyword.value || '');
-    localStorage.setItem('ui_reqSearchField', reqSearchFieldSelect.value);
-    localStorage.setItem('ui_materialSearchKeyword', searchKeyword.value || '');
-    localStorage.setItem('ui_materialSearchField', searchFieldSelect.value);
-    localStorage.setItem('ui_materialPageSize', materialPageSize);
-    localStorage.setItem('ui_materialCurrentPage', materialCurrentPage);
-    localStorage.setItem('ui_quickSearchKeyword', quickSearchInput.value || '');
-    if (currentApplication.reqNo) localStorage.setItem('ui_lastReqNo', currentApplication.reqNo);
-}
-
-function loadUISettings() {
-    let savedTab = localStorage.getItem('ui_activeTab');
-    if (savedTab) document.querySelector(`.tab-btn[data-tab="${savedTab}"]`)?.click();
-    let savedLang = localStorage.getItem('ui_currentLang');
-    if (savedLang === 'en' || savedLang === 'zh') { currentLang = savedLang; updateLibraryUI(); }
-    let savedSortField = localStorage.getItem('ui_reqSortField');
-    if (savedSortField) { reqSortField = savedSortField; reqSortAsc = localStorage.getItem('ui_reqSortAsc') === 'true'; updateReqSortIndicators(); if (reqSortField) sortReqItems(reqSortField, true); }
-    reqSearchKeyword.value = localStorage.getItem('ui_reqSearchKeyword') || '';
-    reqSearchFieldSelect.value = localStorage.getItem('ui_reqSearchField') || 'all';
-    searchKeyword.value = localStorage.getItem('ui_materialSearchKeyword') || '';
-    searchFieldSelect.value = localStorage.getItem('ui_materialSearchField') || 'all';
-    let pageSize = parseInt(localStorage.getItem('ui_materialPageSize'));
-    if (pageSize) { materialPageSize = pageSize; matPageSizeSelect.value = materialPageSize; }
-    let page = parseInt(localStorage.getItem('ui_materialCurrentPage'));
-    if (page && page > 0) materialCurrentPage = page;
-    quickSearchInput.value = localStorage.getItem('ui_quickSearchKeyword') || '';
-    if (quickSearchInput.value.trim()) performQuickSearch();
-    filterRequestTable();
-    performMaterialSearch();
-}
-
-function updateLibraryUI() {
-    let langSpan = document.getElementById('langText');
-    if (currentLang === 'en') { langSpan.innerText = 'EN'; } else { langSpan.innerText = '中'; }
-    quickSearchInput.value = '';
-    quickSearchResultsDiv.style.display = 'none';
-    performMaterialSearch();
-    renderRequestTable();
-    updateLibraryCountDisplay();
-    saveUISettings();
-}
-
-function bindEvents() {
-    initTabSwitching();
-    importEnBtn.onclick = () => importExcelFileWithProgress('en');
-    importZhBtn.onclick = () => importExcelFileWithProgress('zh');
-    exportExcelBtn.onclick = exportToExcel;
-    loadReqBtn.onclick = async () => { let no = reqSerialInput.value.trim(); if (no) await loadApplication(no); else alert("请输入次序号"); };
-    newReqBtn.onclick = async () => { let newNo = prompt("新申请次序号", `REQ-${Date.now().toString().slice(-6)}`); if (newNo) { reqSerialInput.value = newNo; applicantInput.value = "2/O"; applyTimeInput.value = new Date().toISOString().slice(0, 16); await loadApplication(newNo); } };
-    manualSaveBtn.onclick = () => persistCurrentApplication(true);
-    searchKeyword.oninput = () => { clearTimeout(searchDebounceTimer); searchDebounceTimer = setTimeout(() => performMaterialSearch(), 300); };
-    searchFieldSelect.onchange = () => performMaterialSearch();
-    reqSearchFieldSelect.onchange = filterRequestTable;
-    reqSerialInput.onchange = applicantInput.onchange = applyTimeInput.onchange = syncFormToApplication;
-    toggleLangBtn.onclick = () => { currentLang = currentLang === 'en' ? 'zh' : 'en'; updateLibraryUI(); };
-    refreshHistoryBtn.onclick = refreshHistoryList;
-    historyReqSelect.onchange = async e => { if (e.target.value) await loadApplication(e.target.value); };
-    importReqFromExcelBtn.onclick = importReqFromExcel;
-    reqSearchKeyword.oninput = filterRequestTable;
-    clearSearchBtn.onclick = clearSearch;
-    historyDeleteIconBtn.onclick = async () => { let val = historyReqSelect.value; if (val) await deleteHistoryItem(val); else alert("请选择"); };
-    addCustomMaterialBtn.onclick = addCustomMaterial;
-    document.querySelectorAll('#reqTable th[data-sort]').forEach(th => th.onclick = () => sortReqItems(th.dataset.sort));
-    quickSearchInput.oninput = () => { clearTimeout(quickSearchDebounce); quickSearchDebounce = setTimeout(() => performQuickSearch(), 300); };
-    clearQuickSearchBtn.onclick = () => { quickSearchInput.value = ''; quickSearchResultsDiv.style.display = 'none'; saveUISettings(); };
-    matFirstPage.onclick = () => goToMaterialPage(1);
-    matPrevPage.onclick = () => goToMaterialPage(materialCurrentPage - 1);
-    matNextPage.onclick = () => goToMaterialPage(materialCurrentPage + 1);
-    matLastPage.onclick = () => goToMaterialPage(materialTotalPages);
-    matPageSizeSelect.onchange = e => { materialPageSize = parseInt(e.target.value); materialCurrentPage = 1; performMaterialSearch(); saveUISettings(); };
-    batchDeleteReqBtn.onclick = batchDeleteReqItems;
-    backupAllDataBtn.onclick = exportAllDataAsJson;
-    restoreBackupBtn.onclick = restoreFromBackup;
-    attachSelectAllEvent();
-    batchAddMaterialBtn.onclick = batchAddMaterialsFromExcel;
-    clearLibraryBtn.onclick = clearAllMaterialLibraries;
-}
-
-async function init() {
-    loadColumnWidths();
-    let { en, zh } = await loadAllSecureData();
-    materialDataEn = ensureRemarkField(en);
-    materialDataZh = ensureRemarkField(zh);
-    bindEvents();
-    initMaterialEventDelegation();
-    initQuickAddDelegation();
-    initReqTableDelegation();
-    await refreshHistoryList();
-    loadUISettings();
-    let lastReqNo = localStorage.getItem('ui_lastReqNo');
-    if (lastReqNo && await secureGetItem('app', lastReqNo, null)) await loadApplication(lastReqNo);
-    else {
-        let demoNo = `REQ-${new Date().toISOString().slice(0,10)}`;
-        reqSerialInput.value = demoNo;
-        applicantInput.value = "2/O";
-        applyTimeInput.value = new Date().toISOString().slice(0, 16);
-        await loadApplication(demoNo);
-    }
-    window.onbeforeunload = () => { if (currentApplication.reqNo) persistCurrentApplication(false); saveUISettings(); };
-    updateLibraryCountDisplay();
-    updateReqSortIndicators();
-    applyColgroupWidths();
-    setTimeout(() => { initResizeHandlers('reqTable', true); initResizeHandlers('materialSearchTable', false); }, 200);
-}
-
-async function startAuth() {
-    let meta = localStorage.getItem(META_KEY);
-    let overlay = document.getElementById('authOverlay'),
-        password1 = document.getElementById('authPassword1'),
-        password2 = document.getElementById('authPassword2'),
-        title = document.getElementById('authTitle'),
-        submitBtn = document.getElementById('authSubmitBtn'),
-        error = document.getElementById('authError');
-    let pwd2Container = document.getElementById('pwd2Container');
-    if (!meta) {
-        title.innerHTML = '<i class="fas fa-lock"></i> 首次使用：设定主密码 (AES-256)';
-        pwd2Container.style.display = 'block';
-        submitBtn.onclick = async () => {
-            let pwd1 = password1.value,
-                pwd2 = password2.value;
-            if (!pwd1 || pwd1 !== pwd2) { error.innerText = "密码不一致"; return; }
-            if (pwd1.length < 6) { error.innerText = "至少6位"; return; }
-            await setupMasterPassword(pwd1);
-            document.getElementById('mainApp').style.display = 'block';
-            overlay.style.display = 'none';
-            await init();
-        };
-    } else {
-        title.innerHTML = '<i class="fas fa-key"></i> 请输入主密码解锁';
-        pwd2Container.style.display = 'none';
-        submitBtn.onclick = async () => {
-            if (await verifyPassword(password1.value)) {
-                document.getElementById('mainApp').style.display = 'block';
-                overlay.style.display = 'none';
-                await init();
-            } else error.innerText = "密码错误";
-        };
-    }
-}
-startAuth();
-
-document.getElementById('changePasswordBtn')?.addEventListener('click', async () => {
-    let old = prompt("当前主密码");
-    if (!old) return;
-    let new1 = prompt("新密码 (最少6位)");
-    if (!new1 || new1.length < 6) { alert("至少6位"); return; }
-    let new2 = prompt("确认新密码");
-    try { await changePassword(old, new1, new2); alert("密码修改成功！所有数据已重加密"); } catch (e) { alert(e.message); }
-});
-
-document.getElementById('showAuditLogBtn')?.addEventListener('click', () => {
-    let txt = operationLogs.slice(0, 100).map(log => `${log.timestamp} | ${log.action} | ${log.details}`).join("\n");
-    alert("📋 操作日志(最近100条):\n" + (txt || "无记录"));
-});
-</script>
+        document.getElementById('showAuditLogBtn')?.addEventListener('click', ()=>{
+            let txt=operationLogs.slice(0,100).map(l=>`${l.timestamp} | ${l.action} | ${l.details}`).join("\n");
+            alert("📋 操作日志(最近100条):\n"+(txt||"无记录"));
+        });
+    </script>
 </body>
 </html>
