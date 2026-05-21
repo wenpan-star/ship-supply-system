@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v9.7</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v10.2</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
@@ -12,23 +12,23 @@
     </script>
     <style>
         :root {
-            --primary: #1a5c7a;
-            --primary-light: #2c7da0;
-            --primary-soft: #e4eef6;
-            --accent: #f0a04b;
-            --accent-light: #fef7e8;
-            --success: #2e7d5b;
-            --success-soft: #e8f5ee;
-            --danger: #c0392b;
-            --danger-soft: #fef5f4;
-            --bg: #f2f5f8;
+            --primary: #0f3b57;
+            --primary-light: #1f6893;
+            --primary-soft: #d9e6f2;
+            --accent: #cc7d1a;
+            --accent-light: #fef0d8;
+            --success: #1b5e3a;
+            --success-soft: #e0f2e9;
+            --danger: #9e2a2b;
+            --danger-soft: #fbeae9;
+            --bg: #e2e7ed;
             --card-bg: #ffffff;
-            --card-border: #e2e8f0;
-            --text: #1a2b3c;
-            --text-secondary: #5a6f7e;
-            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-            --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.07);
-            --shadow-lg: 0 18px 36px rgba(0, 0, 0, 0.10);
+            --card-border: #cbd5e1;
+            --text: #0a1a2b;
+            --text-secondary: #33475b;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.12);
             --radius-sm: 10px;
             --radius: 18px;
             --radius-lg: 28px;
@@ -88,7 +88,7 @@
             transform: scale(0.96);
         }
         button:hover {
-            filter: brightness(0.94);
+            filter: brightness(0.92);
             box-shadow: var(--shadow-md);
             transform: translateY(-1px);
         }
@@ -137,7 +137,7 @@
             gap: 10px;
             padding: 6px 0 10px 16px;
             border-left: 5px solid var(--primary-light);
-            background: linear-gradient(90deg, #f7fafd 0%, transparent 100%);
+            background: linear-gradient(90deg, #f0f4f8 0%, transparent 100%);
             letter-spacing: -0.2px;
             color: var(--primary);
         }
@@ -181,13 +181,13 @@
         .tab-btn.active {
             background: var(--primary-light);
             color: #fff;
-            box-shadow: 0 6px 16px rgba(44, 125, 160, 0.28);
+            box-shadow: 0 6px 16px rgba(31, 105, 147, 0.35);
             border-color: transparent;
         }
         .tab-btn:hover:not(.active) {
             background: var(--primary-soft);
             color: var(--primary);
-            border-color: #c8dbe8;
+            border-color: #b0c6da;
         }
 
         .version-corner {
@@ -196,7 +196,7 @@
             padding: 6px 16px;
             border-radius: var(--radius-xl);
             font-weight: 600;
-            border: 1px solid #c8d8e5;
+            border: 1px solid #b0c6da;
             color: var(--primary);
             letter-spacing: 0.3px;
         }
@@ -245,9 +245,9 @@
         textarea {
             border-radius: var(--radius-xl);
             padding: 9px 16px;
-            border: 1.5px solid #d5e2ec;
+            border: 1.5px solid #bccbd8;
             font-size: 0.84rem;
-            background: #fafcfd;
+            background: #f8fafc;
             transition: var(--transition);
             outline: none;
             font-family: var(--font-stack);
@@ -257,26 +257,26 @@
         select:focus,
         textarea:focus {
             border-color: var(--primary-light);
-            box-shadow: 0 0 0 4px rgba(44, 125, 160, 0.08);
+            box-shadow: 0 0 0 4px rgba(31, 105, 147, 0.12);
             background: #fff;
         }
         button.primary {
             background: var(--primary-light);
             color: #fff;
-            box-shadow: 0 2px 8px rgba(44, 125, 160, 0.2);
+            box-shadow: 0 2px 8px rgba(31, 105, 147, 0.25);
             padding: 9px 20px;
             font-weight: 600;
         }
         button.success {
             background: var(--success);
             color: #fff;
-            box-shadow: 0 2px 8px rgba(46, 125, 91, 0.18);
+            box-shadow: 0 2px 8px rgba(27, 94, 58, 0.25);
             padding: 9px 20px;
             font-weight: 600;
         }
         button.outline {
             background: #fff;
-            border: 1.5px solid #c8d8e5;
+            border: 1.5px solid #bccbd8;
             color: var(--text-secondary);
             padding: 9px 18px;
             font-weight: 500;
@@ -284,40 +284,38 @@
         button.outline:hover {
             border-color: var(--primary-light);
             color: var(--primary);
-            background: #fafdfe;
+            background: #f4f8fb;
         }
         .danger-btn {
             background: var(--danger-soft);
-            border: 1.5px solid #f0c4bd;
+            border: 1.5px solid #e7bcbc;
             color: var(--danger);
             padding: 9px 18px;
             font-weight: 500;
         }
         .danger-btn:hover {
-            background: #fef0ee;
-            border-color: #e8a89e;
+            background: #fdeaea;
+            border-color: #d99595;
         }
         .warning-btn {
             background: var(--accent-light);
-            border: 1.5px solid #f5d090;
-            color: #b45f06;
+            border: 1.5px solid #efc47a;
+            color: #8b4f0e;
             padding: 9px 18px;
             font-weight: 500;
         }
 
-        /* 滚动容器，表头固定需要配合 sticky */
         .material-table-wrapper,
         .table-wrapper {
             overflow-x: auto;
             border-radius: var(--radius);
             max-height: 580px;
             overflow-y: auto;
-            border: 1px solid #e8eef3;
+            border: 1px solid #cbd6e3;
             background: #fff;
             scroll-behavior: smooth;
         }
 
-        /* 表格改为 separate，sticky 才能生效 */
         .req-table,
         .material-search-table {
             width: 100%;
@@ -332,26 +330,25 @@
         .material-search-table th,
         .material-search-table td {
             padding: 10px 7px;
-            border-bottom: 1px solid #eef3f7;
+            border-bottom: 1px solid #e2e8f0;
             vertical-align: middle;
             text-align: left;
-            background: #fff; /* 单元格背景保持白色，防止透出下层 */
+            background: #fff;
         }
 
         .req-table tr:hover td,
         .material-search-table tr:hover td {
-            background: #f9fcfd;
+            background: #f2f6fa;
         }
 
-        /* 表头固定样式：真正粘滞 */
         .req-table th,
         .material-search-table th {
-            background: #f7fafc;
+            background: #edf2f7;
             font-weight: 700;
-            color: #1a3d52;
+            color: #0b1e2f;
             position: sticky;
             top: 0;
-            border-bottom: 2px solid #dce8f0;
+            border-bottom: 2px solid #cbd6e3;
             font-size: 0.74rem;
             text-transform: uppercase;
             letter-spacing: 0.4px;
@@ -361,7 +358,7 @@
         .sort-indicator {
             margin-left: 4px;
             font-size: 0.6rem;
-            opacity: 0.7;
+            opacity: 0.8;
         }
 
         .resize-handle {
@@ -377,7 +374,7 @@
         }
         .resize-handle:hover {
             background: var(--primary-light);
-            opacity: 0.25;
+            opacity: 0.3;
         }
 
         .qty-input,
@@ -388,7 +385,8 @@
             padding: 7px 6px;
             border-radius: var(--radius-sm);
             font-size: 0.76rem;
-            border: 1.5px solid #e4ecf2;
+            border: 1.5px solid #d9e1e8;
+            background: #fff;
         }
         .delete-item {
             font-size: 1.1rem;
@@ -397,14 +395,14 @@
         }
         .delete-item:hover {
             opacity: 1;
-            color: #e74c3c;
-            background: #fef5f4;
+            color: #c0392b;
+            background: #fbe9e7;
             border-radius: 50%;
         }
 
         .status-bar {
             font-size: 0.68rem;
-            background: #eef4f8;
+            background: #e5edf5;
             padding: 7px 18px;
             border-radius: var(--radius-xl);
             display: inline-block;
@@ -412,13 +410,14 @@
             color: var(--primary-light);
             font-weight: 500;
             letter-spacing: 0.2px;
+            border: 1px solid #cbd6e3;
         }
         .quick-add-area {
-            background: #fafdfe;
+            background: #f8fafd;
             border-radius: var(--radius);
             padding: 14px 18px;
             margin-bottom: 18px;
-            border: 1px solid #e4edf3;
+            border: 1px solid #d5e0ea;
         }
         .quick-results {
             max-height: 260px;
@@ -426,7 +425,7 @@
             margin-top: 12px;
             border-radius: var(--radius);
             background: #fff;
-            border: 1px solid #e4eef5;
+            border: 1px solid #d5e0ea;
         }
         .quick-results table {
             width: 100%;
@@ -435,23 +434,23 @@
             border-spacing: 0;
         }
         .quick-results th {
-            background: #f7fafc;
+            background: #edf2f7;
             padding: 8px 10px;
             font-weight: 700;
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.3px;
-            border-bottom: 2px solid #dce8f0;
+            border-bottom: 2px solid #cbd6e3;
             position: sticky;
             top: 0;
         }
         .quick-results td {
             padding: 7px 10px;
-            border-bottom: 1px solid #f0f4f7;
+            border-bottom: 1px solid #e2e8f0;
             background: #fff;
         }
         .quick-results tr:hover td {
-            background: #f9fdfe;
+            background: #f2f7fb;
         }
         .add-quick-btn {
             background: var(--primary-soft);
@@ -460,7 +459,7 @@
             border-radius: var(--radius-xl);
             font-size: 0.72rem;
             font-weight: 600;
-            border: 1px solid #c8dbe8;
+            border: 1px solid #b0c6da;
             cursor: pointer;
             transition: var(--transition);
         }
@@ -471,10 +470,10 @@
             box-shadow: var(--shadow-sm);
         }
         .batch-area {
-            background: #fbfeff;
+            background: #f8fafd;
             border-radius: var(--radius);
             margin-bottom: 16px;
-            border: 1px solid #e4edf3;
+            border: 1px solid #d5e0ea;
             padding: 16px 18px;
         }
         .batch-grid {
@@ -490,7 +489,7 @@
             gap: 12px;
             margin-top: 16px;
             padding-top: 12px;
-            border-top: 1px solid #e4edf3;
+            border-top: 1px solid #d5e0ea;
         }
         .pagination-bar {
             display: flex;
@@ -502,7 +501,7 @@
         }
         .pagination-bar button {
             background: #fff;
-            border: 1px solid #d5e2ec;
+            border: 1px solid #bccbd8;
             border-radius: var(--radius-xl);
             padding: 6px 14px;
             font-size: 0.74rem;
@@ -513,13 +512,13 @@
             cursor: not-allowed;
         }
         .library-count-badge {
-            background: #eef3f7;
+            background: #e5edf5;
             border-radius: var(--radius-xl);
             padding: 5px 16px;
             font-size: 0.7rem;
             font-weight: 600;
             color: var(--primary-light);
-            border: 1px solid #dce6ed;
+            border: 1px solid #cbd6e3;
         }
         .btn-icon-group {
             display: flex;
@@ -533,7 +532,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             backdrop-filter: blur(16px);
             display: flex;
             align-items: center;
@@ -546,7 +545,7 @@
             padding: 2rem 2rem 2.2rem;
             width: 90%;
             max-width: 420px;
-            box-shadow: 0 40px 60px -20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 40px 60px -20px rgba(0, 0, 0, 0.5);
             text-align: center;
         }
         .auth-card h2 {
@@ -561,7 +560,7 @@
             margin-bottom: 0.4rem;
         }
         .progress-bar-container {
-            background: #e0eaf1;
+            background: #d5e0ea;
             border-radius: 24px;
             height: 8px;
             margin-top: 6px;
@@ -584,11 +583,11 @@
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #eef3f7;
+            background: #e2e8f0;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #c5d9e8;
+            background: #a0bcd0;
             border-radius: 10px;
         }
         .inline-edit {
@@ -617,15 +616,15 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #b0c4de;
+            color: #8fa8c0;
             transition: var(--transition);
             font-size: 1rem;
             padding: 4px 8px;
             border-radius: 50%;
         }
         .delete-material:hover {
-            color: #e74c3c;
-            background: #fef5f4;
+            color: #c0392b;
+            background: #fbe9e7;
         }
         .input-icon {
             position: relative;
@@ -636,7 +635,7 @@
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #90b8cf;
+            color: #7a9bb5;
             font-size: 1rem;
             pointer-events: none;
         }
@@ -646,7 +645,7 @@
             margin: 0;
         }
         .error-msg {
-            color: #c0392b;
+            color: #9e2a2b;
             margin-top: 12px;
             font-size: 0.85rem;
         }
@@ -660,7 +659,7 @@
             <div id="authTitle"><i class="fas fa-lock"></i> 🔐 首次使用：设定主密码 (AES-256)</div>
             <div class="input-icon"><i class="fas fa-key"></i><input type="password" id="authPassword1" placeholder="请输入密码" autocomplete="off"></div>
             <div class="input-icon" id="pwd2Container" style="display:block;"><i class="fas fa-check-circle"></i><input type="password" id="authPassword2" placeholder="再次输入密码" autocomplete="off"></div>
-            <button id="authSubmitBtn" style="background:#2c7da0;color:white;padding:12px;width:100%;margin-top:8px;font-weight:600;border-radius:40px;"><i class="fas fa-check-circle"></i> 确认并解锁</button>
+            <button id="authSubmitBtn" style="background:#1f6893;color:white;padding:12px;width:100%;margin-top:8px;font-weight:600;border-radius:40px;"><i class="fas fa-check-circle"></i> 确认并解锁</button>
             <div id="authError" class="error-msg"></div>
             <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · IndexedDB · 安全加密 · 支持15W+条目</div>
         </div>
@@ -675,7 +674,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v9.7 · 表头固定修复</div>
+                <div class="version-corner">v10.2 · JSON备份</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -684,7 +683,7 @@
                     <div class="btn-icon-group"><span id="itemCountBadge" class="library-count-badge">0 项</span><button id="exportExcelBtn" class="success"><i class="fas fa-download"></i> 导出申请单</button><button id="importReqFromExcelBtn" class="outline"><i class="fas fa-upload"></i> 导入申请单</button></div>
                 </div>
                 <div class="flex-row">
-                    <div class="form-group"><label><i class="fas fa-hashtag"></i> 申请次序号</label><input type="text" id="reqSerial" placeholder="PO-2025-001" style="width:220px;"></div>
+                    <div class="form-group"><label><i class="fas fa-hashtag"></i> 申请次序号</label><input type="text" id="reqSerial" placeholder="REQ-AC OREN-" style="width:220px;"></div>
                     <div class="form-group"><label><i class="fas fa-user"></i> 申请人</label><select id="applicant" style="width:150px;">
                             <option value="C/O">C/O</option>
                             <option value="2/O" selected>2/O</option>
@@ -706,10 +705,19 @@
                 <div class="status-bar" id="autoSaveStatus"><i class="fas fa-shield-alt"></i> 安全加密 · 实时保存已就绪 · IndexedDB 存储</div>
             </div>
             <div class="card">
-                <div class="card-header"><i class="fas fa-bolt"></i> 闪电添加物料 (IMPA快速检索)</div>
                 <div class="quick-add-area">
                     <div class="flex-row">
-                        <div style="flex:3;"><input type="text" id="quickSearchInput" placeholder="输入IMPA码或物料描述进行快速搜索" style="width:100%;"></div><button id="clearQuickSearchBtn" class="outline"><i class="fas fa-eraser"></i> 清空</button>
+                        <div style="flex:3; display:flex; gap:8px; align-items:flex-end;">
+                            <div class="form-group" style="flex:2;"><label><i class="fas fa-bolt"></i> 闪电添加物料</label><input type="text" id="quickSearchInput" placeholder="输入IMPA码或物料描述进行快速搜索" style="width:100%;"></div>
+                            <div class="form-group" style="flex:0 0 auto;"><label>检索字段</label><select id="quickSearchFieldSelect">
+                                    <option value="all">全部字段</option>
+                                    <option value="impa">IMPA</option>
+                                    <option value="description">物料描述</option>
+                                    <option value="specification">规格型号</option>
+                                    <option value="remark">备注</option>
+                            </select></div>
+                        </div>
+                        <button id="clearQuickSearchBtn" class="outline"><i class="fas fa-eraser"></i> 清空</button>
                     </div>
                     <div id="quickSearchResults" class="quick-results" style="display:none;">
                         <table style="width:100%">
@@ -732,6 +740,8 @@
                                 <option value="all">全部字段</option>
                                 <option value="impa">IMPA</option>
                                 <option value="description">物料描述</option>
+                                <option value="specification">规格型号</option>
+                                <option value="remark">备注</option>
                             </select><button id="resetAddOrderBtn" class="outline" title="按默认添加顺序排列（最新最上）"><i class="fas fa-sort-amount-down-alt"></i> ↕ 添加顺序</button></div>
                     </div><button id="clearSearchBtn" class="outline"><i class="fas fa-times"></i> 清除</button><button id="batchDeleteReqBtn" class="danger-btn"><i class="fas fa-trash-alt"></i> 删除选中</button>
                 </div>
@@ -762,7 +772,14 @@
         <div id="materialTab" class="tab-pane">
             <div class="card">
                 <div class="card-header"><span><i class="fas fa-warehouse"></i> 智能物料库 (IMPA 中/英双库 · IndexedDB 存储)</span>
-                    <div class="btn-icon-group"><button id="reloadMaterialBtn" class="outline" title="从加密存储中重新加载物料库"><i class="fas fa-sync-alt"></i> 刷新库</button><button id="importEnBtn" class="primary"><i class="fas fa-file-import"></i> 导入英文库</button><button id="importZhBtn" class="primary"><i class="fas fa-file-import"></i> 导入中文库</button><button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空当前库</button></div>
+                    <div class="btn-icon-group">
+                        <button id="reloadMaterialBtn" class="outline" title="从加密存储中重新加载物料库"><i class="fas fa-sync-alt"></i> 刷新库</button>
+                        <button id="importEnBtn" class="primary"><i class="fas fa-file-import"></i> 导入英文库</button>
+                        <button id="importZhBtn" class="primary"><i class="fas fa-file-import"></i> 导入中文库</button>
+                        <button id="exportBackupBtn" class="success"><i class="fas fa-cloud-download-alt"></i> 导出备份(JSON)</button>
+                        <button id="importBackupBtn" class="outline"><i class="fas fa-cloud-upload-alt"></i> 导入备份(JSON)</button>
+                        <button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空当前库</button>
+                    </div>
                 </div>
                 <div id="importProgressArea" style="display:none;" class="status-bar">
                     <div>导入进度: <span id="importProgressText">0%</span></div>
@@ -774,6 +791,7 @@
                                 <option value="all">全部字段</option>
                                 <option value="impa">IMPA</option>
                                 <option value="description">物料描述</option>
+                                <option value="specification">规格型号</option>
                                 <option value="unit">单位</option>
                                 <option value="remark">备注</option>
                             </select></div>
@@ -781,7 +799,7 @@
                     <div><span id="currentLibraryCount" class="library-count-badge">0 条</span></div>
                 </div>
                 <div class="batch-area">
-                    <div style="font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--primary);"><i class="fas fa-plus-circle" style="color:#2c7da0;"></i> 快速添加自定义物料</div>
+                    <div style="font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--primary);"><i class="fas fa-plus-circle" style="color:#1f6893;"></i> 快速添加自定义物料</div>
                     <div class="batch-grid">
                         <div class="form-group"><label>IMPA *</label><input type="text" id="newImpa" placeholder="例: 999999"></div>
                         <div class="form-group"><label>物料描述 *</label><input type="text" id="newDesc" placeholder="描述"></div>
@@ -789,7 +807,7 @@
                         <div class="form-group"><label>单位</label><input type="text" id="newUnit" placeholder="单位"></div>
                         <div class="form-group"><label>备注</label><input type="text" id="newRemark" placeholder="备注"></div><button id="addCustomMaterialBtn" class="primary" style="height:42px; margin-top:4px;"><i class="fas fa-save"></i> 添加</button>
                     </div>
-                    <div class="batch-import-row"><span style="font-size:0.7rem; background:#eef3f8; padding:5px 12px; border-radius:40px;"><i class="fas fa-file-excel"></i> 批量追加物料 (Excel) 支持备注列</span><button id="batchAddMaterialBtn" class="outline" style="height:36px;"><i class="fas fa-upload"></i> 选择Excel (追加/覆盖)</button><span class="status-bar" style="margin:0; padding:3px 14px; font-size:0.7rem;">列: IMPA,物料描述,规格,单位,备注</span></div>
+                    <div class="batch-import-row"><span style="font-size:0.7rem; background:#e5edf5; padding:5px 12px; border-radius:40px;"><i class="fas fa-file-excel"></i> 批量追加物料 (Excel) 支持备注列</span><button id="batchAddMaterialBtn" class="outline" style="height:36px;"><i class="fas fa-upload"></i> 选择Excel (追加/覆盖)</button><span class="status-bar" style="margin:0; padding:3px 14px; font-size:0.7rem;">列: IMPA,物料描述,规格,单位,备注</span></div>
                 </div>
                 <div class="material-table-wrapper">
                     <table class="material-search-table" id="materialSearchTable">
@@ -825,12 +843,12 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v9.7 表头修复版，存储结构不变) ==========
+        // ========== 安全与存储核心 (v10.2 JSON备份增强版) ==========
         let cryptoKey = null,
             isAuthenticated = false,
             operationLogs = [];
-        const META_KEY = 'impa_security_meta_v96', // 保持不变，兼容旧数据
-            ENC_PREFIX = 'v3::'; // 保持不变
+        const META_KEY = 'impa_security_meta_v96',
+            ENC_PREFIX = 'v3::';
         const CHUNK_SIZE = 5000;
         const secureStores = {
             en: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'material_en' }),
@@ -838,7 +856,6 @@
             app: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'applications' })
         };
 
-        // Base64 编解码
         function uint8ArrayToBase64(bytes) {
             const chunkSize = 8192;
             let binaryString = '';
@@ -901,7 +918,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v9.7 表头固定修复版");
+            addLog("系统初始化", "v10.2 JSON备份版");
             return true;
         }
 
@@ -950,7 +967,6 @@
             }
 
             await secureSetItem(storeName, 'meta', { chunkCount: chunks.length, total: fullArray.length });
-            console.log(`保存完成：${storeName} ${fullArray.length} 条`);
             return true;
         }
 
@@ -1076,7 +1092,10 @@
             reqDefaultOrder = 'reverse',
             reqColumnWidths = [32, 40, 100, 180, 150, 80, 100, 100, 120, 60],
             materialColumnWidths = [50, 120, 200, 180, 80, 150, 60],
-            currentLang = 'zh';
+            currentLang = 'zh',
+            quickSearchField = 'all';
+
+        const DEFAULT_REQ_PREFIX = "REQ-AC OREN-";
 
         // DOM 引用
         const reqSerialInput = document.getElementById('reqSerial'),
@@ -1103,6 +1122,8 @@
             reloadMaterialBtn = document.getElementById('reloadMaterialBtn'),
             importEnBtn = document.getElementById('importEnBtn'),
             importZhBtn = document.getElementById('importZhBtn'),
+            exportBackupBtn = document.getElementById('exportBackupBtn'),
+            importBackupBtn = document.getElementById('importBackupBtn'),
             addCustomMaterialBtn = document.getElementById('addCustomMaterialBtn'),
             newImpa = document.getElementById('newImpa'),
             newDesc = document.getElementById('newDesc'),
@@ -1113,6 +1134,7 @@
             reqSearchFieldSelect = document.getElementById('reqSearchFieldSelect'),
             resetAddOrderBtn = document.getElementById('resetAddOrderBtn'),
             quickSearchInput = document.getElementById('quickSearchInput'),
+            quickSearchFieldSelect = document.getElementById('quickSearchFieldSelect'),
             quickSearchResultsDiv = document.getElementById('quickSearchResults'),
             quickSearchTbody = document.getElementById('quickSearchTbody'),
             clearQuickSearchBtn = document.getElementById('clearQuickSearchBtn'),
@@ -1142,7 +1164,6 @@
             else materialDataZh = data;
             await saveChunkedData(language, data);
             addLog("物料库变更", `${language==='en'?'英文':'中文'}库 ${data.length}条`);
-            console.log(`物料库 ${language} 保存完成，共 ${data.length} 条`);
         }
 
         function updateLibraryCountDisplay() { currentLibraryCountSpan.innerText = `${getCurrentMaterialArray().length} 条`; }
@@ -1192,9 +1213,10 @@
             let filtered = keyword ? currentArray.filter(material => {
                 if (field === 'impa') return material.impa.toLowerCase().includes(keyword);
                 if (field === 'description') return material.description.toLowerCase().includes(keyword);
+                if (field === 'specification') return (material.specification || '').toLowerCase().includes(keyword);
                 if (field === 'unit') return (material.unit || '').toLowerCase().includes(keyword);
                 if (field === 'remark') return (material.remark || '').toLowerCase().includes(keyword);
-                return material.impa.toLowerCase().includes(keyword) || material.description.toLowerCase().includes(keyword) || (material.unit || '').toLowerCase().includes(keyword) || (material.remark || '').toLowerCase().includes(keyword);
+                return material.impa.toLowerCase().includes(keyword) || material.description.toLowerCase().includes(keyword) || (material.specification || '').toLowerCase().includes(keyword) || (material.unit || '').toLowerCase().includes(keyword) || (material.remark || '').toLowerCase().includes(keyword);
             }) : currentArray.slice();
             materialFilteredData = filtered;
             materialTotalPages = Math.ceil(materialFilteredData.length / materialPageSize);
@@ -1235,7 +1257,7 @@
             if (materialCurrentPage !== page) { materialCurrentPage = page; renderMaterialTable(); updateMaterialPaginationControls(); saveUISettings(); }
         }
 
-        function renderRequestTable() {
+        function getDisplayedItems() {
             let allItems = currentApplication.items;
             let orderedItems = reqDefaultOrder === 'reverse' ? allItems.slice().reverse() : allItems.slice();
 
@@ -1244,7 +1266,9 @@
                     field = reqSearchField;
                 if (field === 'impa') return item.impa.toLowerCase().includes(keyword);
                 if (field === 'description') return item.description.toLowerCase().includes(keyword);
-                return item.impa.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword);
+                if (field === 'specification') return (item.spec || '').toLowerCase().includes(keyword);
+                if (field === 'remark') return (item.remark || '').toLowerCase().includes(keyword);
+                return item.impa.toLowerCase().includes(keyword) || item.description.toLowerCase().includes(keyword) || (item.spec || '').toLowerCase().includes(keyword) || (item.remark || '').toLowerCase().includes(keyword);
             }) : orderedItems.slice();
 
             if (reqSortField) {
@@ -1275,8 +1299,12 @@
                     return 0;
                 });
             }
+            return filtered;
+        }
 
-            if (!allItems.length) {
+        function renderRequestTable() {
+            let filtered = getDisplayedItems();
+            if (!currentApplication.items.length) {
                 reqTableBody.innerHTML = '<tr><td colspan="10">暂无物料</td></tr>';
                 itemCountBadge.innerText = '0 项';
                 selectAllCheckbox.checked = false;
@@ -1285,12 +1313,12 @@
 
             let html = '';
             filtered.forEach((item, displayIndex) => {
-                let originalIndex = allItems.indexOf(item);
+                let originalIndex = currentApplication.items.indexOf(item);
                 let manualStock = item.manualStock ?? 0;
                 html += `<tr data-original-idx="${originalIndex}"><td class="checkbox-col"><input type="checkbox" class="req-item-checkbox" data-original-idx="${originalIndex}"></td><td>${displayIndex+1}</td><td>${escapeHtml(item.impa)}</td><td>${escapeHtml(item.description)}</td><td>${escapeHtml(item.spec||'-')}</td><td>${escapeHtml(item.unit||'-')}</td><td><input type="number" class="stock-manual-input" value="${manualStock}" step="any" min="0" data-original-idx="${originalIndex}" style="width:90px;"></td><td><input type="number" class="qty-input" value="${item.quantity||1}" min="0" step="any" data-original-idx="${originalIndex}" style="width:80px;"></td><td><input type="text" class="remark-input" placeholder="备注" value="${escapeHtml(item.remark||'')}" data-original-idx="${originalIndex}" maxlength="200"></td><td><button class="delete-item" data-original-idx="${originalIndex}"><i class="far fa-trash-alt"></i></button></td></tr>`;
             });
             reqTableBody.innerHTML = html;
-            itemCountBadge.innerText = `${allItems.length} 项`;
+            itemCountBadge.innerText = `${currentApplication.items.length} 项`;
             bindSelectAllEvents();
             initResizeHandlers('reqTable', true);
         }
@@ -1340,13 +1368,14 @@
 
         function exportToExcel() {
             if (!currentApplication.reqNo) return alert("请填写申请次序号");
+            let exportItems = getDisplayedItems();
             let data = [
                 ["物料申请单", "", "", "", "", "", ""],
                 ["申请次序号", currentApplication.reqNo, "申请人", currentApplication.applicant, "申请时间", currentApplication.applyTime || "", ""],
                 [],
                 ["IMPA", "物料描述", "规格型号", "单位", "库存", "申请数量", "备注"]
             ];
-            for (let item of currentApplication.items) data.push([sanitizeExcelCell(item.impa), sanitizeExcelCell(item.description), sanitizeExcelCell(item.spec), sanitizeExcelCell(item.unit), sanitizeExcelCell(item.manualStock ?? 0), sanitizeExcelCell(item.quantity), sanitizeExcelCell(item.remark)]);
+            for (let item of exportItems) data.push([sanitizeExcelCell(item.impa), sanitizeExcelCell(item.description), sanitizeExcelCell(item.spec), sanitizeExcelCell(item.unit), sanitizeExcelCell(item.manualStock ?? 0), sanitizeExcelCell(item.quantity), sanitizeExcelCell(item.remark)]);
             let worksheet = XLSX.utils.aoa_to_sheet(data);
             worksheet['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 20 }];
             let workbook = XLSX.utils.book_new();
@@ -1449,7 +1478,14 @@
             let keyword = quickSearchInput.value.trim().toLowerCase();
             if (!keyword) { quickSearchResultsDiv.style.display = 'none'; return; }
             let library = getCurrentMaterialArray();
-            let filtered = library.filter(m => m.impa.toLowerCase().includes(keyword) || m.description.toLowerCase().includes(keyword)).slice(0, 20);
+            let field = quickSearchFieldSelect.value;
+            let filtered = library.filter(m => {
+                if (field === 'impa') return m.impa.toLowerCase().includes(keyword);
+                if (field === 'description') return m.description.toLowerCase().includes(keyword);
+                if (field === 'specification') return (m.specification || '').toLowerCase().includes(keyword);
+                if (field === 'remark') return (m.remark || '').toLowerCase().includes(keyword);
+                return m.impa.toLowerCase().includes(keyword) || m.description.toLowerCase().includes(keyword) || (m.specification || '').toLowerCase().includes(keyword) || (m.remark || '').toLowerCase().includes(keyword);
+            }).slice(0, 20);
             if (!filtered.length) { quickSearchTbody.innerHTML = '<tr><td colspan="5">未找到</td></tr>'; quickSearchResultsDiv.style.display = 'block'; return; }
             let rows = '';
             filtered.forEach(m => { rows += `<tr><td>${escapeHtml(m.impa)}</td><td>${escapeHtml(m.description)}</td><td>${escapeHtml(m.specification||'-')}</td><td>${escapeHtml(m.unit||'-')}</td><td><button class="add-quick-btn" data-impa="${escapeHtml(m.impa)}" data-desc="${escapeHtml(m.description)}" data-spec="${escapeHtml(m.specification||'')}" data-unit="${escapeHtml(m.unit||'')}" data-remark="${escapeHtml(m.remark||'')}"><i class="fas fa-plus"></i> 添加</button></td></tr>`; });
@@ -1672,6 +1708,76 @@
             input.click();
         }
 
+        // ========== JSON 备份导出 ==========
+        function exportBackupJSON() {
+            const data = getCurrentMaterialArray();
+            if (!data.length) return alert("当前库没有数据可备份");
+            const exportData = data.map(item => ({
+                impa: item.impa,
+                description: item.description,
+                specification: item.specification || '',
+                unit: item.unit || '',
+                remark: item.remark || ''
+            }));
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `物料库备份_${currentLang.toUpperCase()}_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addLog("导出JSON备份", `${currentLang}库 ${exportData.length}条`);
+            alert(`✅ 导出成功！共 ${exportData.length} 条物料`);
+        }
+
+        // ========== JSON 备份导入 ==========
+        async function importBackupJSON() {
+            if (!await requirePasswordAuth("导入JSON备份")) return;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    if (!Array.isArray(data)) throw new Error("JSON 格式错误：根元素应为数组");
+                    const imported = data.map(item => ({
+                        impa: String(item.impa || '').trim().slice(0, 30),
+                        description: String(item.description || '').trim().slice(0, 200),
+                        specification: String(item.specification || '').trim().slice(0, 100),
+                        unit: String(item.unit || '').trim().slice(0, 20),
+                        remark: String(item.remark || '').trim().slice(0, 200)
+                    })).filter(item => item.impa);
+                    if (!imported.length) return alert("导入失败：无有效物料数据");
+                    const mode = confirm("点击「确定」覆盖当前库，「取消」合并追加");
+                    const current = getCurrentMaterialArray();
+                    let final;
+                    if (mode) {
+                        final = imported;
+                    } else {
+                        const map = new Map(current.map(m => [m.impa, m]));
+                        for (const item of imported) {
+                            if (!map.has(item.impa)) map.set(item.impa, item);
+                        }
+                        final = Array.from(map.values());
+                    }
+                    await saveFullMaterialArray(currentLang, final);
+                    performMaterialSearch();
+                    renderRequestTable();
+                    updateLibraryCountDisplay();
+                    addLog("导入JSON备份", `模式:${mode?'覆盖':'合并'} ${imported.length}条`);
+                    alert(`✅ 导入完成！当前库共 ${final.length} 条`);
+                } catch (err) {
+                    alert("导入失败：" + err.message);
+                    console.error(err);
+                }
+            };
+            input.click();
+        }
+
         function saveColumnWidths() {
             localStorage.setItem('reqColWidths', JSON.stringify(reqColumnWidths));
             localStorage.setItem('materialColWidths', JSON.stringify(materialColumnWidths));
@@ -1725,6 +1831,7 @@
             localStorage.setItem('ui_materialPageSize', materialPageSize);
             localStorage.setItem('ui_materialCurrentPage', materialCurrentPage);
             localStorage.setItem('ui_quickSearchKeyword', quickSearchInput.value || '');
+            localStorage.setItem('ui_quickSearchField', quickSearchFieldSelect.value);
             if (currentApplication.reqNo) localStorage.setItem('ui_lastReqNo', currentApplication.reqNo);
         }
 
@@ -1746,6 +1853,7 @@
             let page = parseInt(localStorage.getItem('ui_materialCurrentPage'));
             if (page && page > 0) materialCurrentPage = page;
             quickSearchInput.value = localStorage.getItem('ui_quickSearchKeyword') || '';
+            quickSearchFieldSelect.value = localStorage.getItem('ui_quickSearchField') || 'all';
             if (quickSearchInput.value.trim()) performQuickSearch();
             filterRequestTable();
             performMaterialSearch();
@@ -1773,10 +1881,12 @@
             reloadMaterialBtn.onclick = reloadMaterialLibrary;
             importEnBtn.onclick = () => importExcelFileWithProgress('en');
             importZhBtn.onclick = () => importExcelFileWithProgress('zh');
+            exportBackupBtn.onclick = exportBackupJSON;
+            importBackupBtn.onclick = importBackupJSON;
             exportExcelBtn.onclick = exportToExcel;
             loadReqBtn.onclick = async () => { let no = reqSerialInput.value.trim(); if (no) await loadApplication(no); else alert("请输入次序号"); };
             newReqBtn.onclick = async () => {
-                let newNo = prompt("新申请次序号", `REQ-${Date.now().toString().slice(-6)}`);
+                let newNo = prompt("新申请次序号", `${DEFAULT_REQ_PREFIX}${Date.now().toString().slice(-6)}`);
                 if (newNo) {
                     reqSerialInput.value = newNo;
                     applicantInput.value = "2/O";
@@ -1800,6 +1910,7 @@
             addCustomMaterialBtn.onclick = addCustomMaterial;
             document.querySelectorAll('#reqTable th[data-sort]').forEach(th => th.onclick = () => sortReqItems(th.dataset.sort));
             quickSearchInput.oninput = () => { clearTimeout(quickSearchDebounce); quickSearchDebounce = setTimeout(() => performQuickSearch(), 300); };
+            quickSearchFieldSelect.onchange = () => { performQuickSearch(); saveUISettings(); };
             clearQuickSearchBtn.onclick = () => { quickSearchInput.value = ''; quickSearchResultsDiv.style.display = 'none'; saveUISettings(); };
             matFirstPage.onclick = () => goToMaterialPage(1);
             matPrevPage.onclick = () => goToMaterialPage(materialCurrentPage - 1);
@@ -1877,8 +1988,7 @@
             let { en, zh } = await loadAllSecureData();
             materialDataEn = ensureRemarkField(en);
             materialDataZh = ensureRemarkField(zh);
-            console.log(`物料库加载完成：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
-            autoSaveSpan.innerHTML += ' <span style="color:#2e7d5b;">✅ IndexedDB 就绪</span>';
+            autoSaveSpan.innerHTML += ' <span style="color:#1b5e3a;">✅ IndexedDB 就绪</span>';
             bindEvents();
             initMaterialEventDelegation();
             initQuickAddDelegation();
@@ -1889,7 +1999,7 @@
             if (lastReqNo && await secureGetItem('app', lastReqNo, null)) await loadApplication(lastReqNo);
             else {
                 let localDate = getLocalDatetimeString().split('T')[0];
-                let demoNo = `REQ-${localDate}`;
+                let demoNo = `${DEFAULT_REQ_PREFIX}${localDate}`;
                 reqSerialInput.value = demoNo;
                 applicantInput.value = "2/O";
                 applyTimeInput.value = getLocalDatetimeString();
