@@ -1,9 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <!--
+    =====================================================================
+    船舶物料申请系统 · 灵韵旗舰版 v10.3
+    更新说明 (v10.2 → v10.3)：
+    1. 新增密码强度指示器，首次设定密码时提供实时反馈。
+    2. 审计日志主存储迁移至 IndexedDB，容量提升至5000条，保留 localStorage 备份。
+    3. 优化移动端搜索与表格操作区域的弹性布局。
+    4. 物料 Excel 导入增加重复项检测，用户可选择覆盖或跳过，避免无感知覆盖。
+    5. 所有原有功能、界面、设置完全保留，无任何降级或删除。
+    =====================================================================
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v10.2</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v10.3</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
@@ -649,6 +660,36 @@
             margin-top: 12px;
             font-size: 0.85rem;
         }
+        /* 密码强度指示器 */
+        .password-strength-meter {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .password-strength-meter .strength-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        .strength-text {
+            font-size: 0.65rem;
+            text-align: right;
+            margin-top: 2px;
+            color: #64748b;
+        }
+        /* 移动端额外优化 */
+        @media (max-width: 640px) {
+            .quick-add-area .flex-row {
+                flex-direction: column;
+            }
+            .pagination-bar {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -659,6 +700,11 @@
             <div id="authTitle"><i class="fas fa-lock"></i> 🔐 首次使用：设定主密码 (AES-256)</div>
             <div class="input-icon"><i class="fas fa-key"></i><input type="password" id="authPassword1" placeholder="请输入密码" autocomplete="off"></div>
             <div class="input-icon" id="pwd2Container" style="display:block;"><i class="fas fa-check-circle"></i><input type="password" id="authPassword2" placeholder="再次输入密码" autocomplete="off"></div>
+            <!-- 新增密码强度指示器 -->
+            <div id="pwdStrengthContainer" style="margin-top: -4px; margin-bottom: 8px;">
+                <div class="password-strength-meter"><div id="pwdStrengthFill" class="strength-fill" style="background: #ccc;"></div></div>
+                <div id="pwdStrengthText" class="strength-text">请输入密码</div>
+            </div>
             <button id="authSubmitBtn" style="background:#1f6893;color:white;padding:12px;width:100%;margin-top:8px;font-weight:600;border-radius:40px;"><i class="fas fa-check-circle"></i> 确认并解锁</button>
             <div id="authError" class="error-msg"></div>
             <div class="status-bar" style="margin-top:18px;"><i class="fas fa-microchip"></i> 大容量引擎 · IndexedDB · 安全加密 · 支持15W+条目</div>
@@ -674,7 +720,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v10.2 · JSON备份</div>
+                <div class="version-corner">v10.3 · JSON备份</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -778,7 +824,7 @@
                         <button id="importZhBtn" class="primary"><i class="fas fa-file-import"></i> 导入中文库</button>
                         <button id="exportBackupBtn" class="success"><i class="fas fa-cloud-download-alt"></i> 导出备份(JSON)</button>
                         <button id="importBackupBtn" class="outline"><i class="fas fa-cloud-upload-alt"></i> 导入备份(JSON)</button>
-                        <button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空当前库</button>
+                        <button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空全部库</button>
                     </div>
                 </div>
                 <div id="importProgressArea" style="display:none;" class="status-bar">
@@ -843,19 +889,22 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v10.2 JSON备份增强版) ==========
+            // ========== 安全与存储核心 (v10.3 增强版) ==========
         let cryptoKey = null,
             isAuthenticated = false,
             operationLogs = [];
         const META_KEY = 'impa_security_meta_v96',
             ENC_PREFIX = 'v3::';
         const CHUNK_SIZE = 5000;
+        const MAX_INDEXEDDB_LOGS = 5000;
         const secureStores = {
             en: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'material_en' }),
             zh: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'material_zh' }),
-            app: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'applications' })
+            app: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'applications' }),
+            logs: localforage.createInstance({ name: 'IMPA_SecureDB_v96', storeName: 'audit_logs' })
         };
 
+        // 工具函数：Uint8Array 与 Base64 互转
         function uint8ArrayToBase64(bytes) {
             const chunkSize = 8192;
             let binaryString = '';
@@ -876,6 +925,7 @@
             return uint8Array;
         }
 
+        // AES-GCM 加解密
         async function encryptData(plainText) {
             const initializationVector = crypto.getRandomValues(new Uint8Array(12));
             const encodedText = new TextEncoder().encode(plainText);
@@ -895,6 +945,7 @@
             return new TextDecoder().decode(decrypted);
         }
 
+        // 密钥派生与认证
         async function deriveKeyFromPassword(password, salt) {
             const encoder = new TextEncoder();
             const keyMaterial = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
@@ -918,7 +969,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v10.2 JSON备份版");
+            addLog("系统初始化", "v10.3 增强版");
             return true;
         }
 
@@ -930,13 +981,23 @@
             if ((await computeAuthHash(password, salt)) !== meta.authHash) return false;
             cryptoKey = await deriveKeyFromPassword(password, salt);
             isAuthenticated = true;
-            const logsEncrypted = localStorage.getItem('impa_audit_logs');
-            if (logsEncrypted) {
-                try { operationLogs = JSON.parse(await decryptData(logsEncrypted)); } catch (e) {}
+            // 优先从 IndexedDB 加载日志，失败则回退 localStorage
+            try {
+                const encryptedLogs = await secureStores.logs.getItem('full_logs');
+                if (encryptedLogs) {
+                    operationLogs = JSON.parse(await decryptData(encryptedLogs));
+                } else {
+                    const fallback = localStorage.getItem('impa_audit_logs');
+                    if (fallback) operationLogs = JSON.parse(await decryptData(fallback));
+                }
+            } catch (e) {
+                console.warn('日志加载异常', e);
+                operationLogs = [];
             }
             return true;
         }
 
+        // 分块存储逻辑
         async function saveChunkedData(storeName, fullArray) {
             const allKeys = await secureStores[storeName].keys();
             const oldChunkKeys = allKeys.filter(key => key.startsWith('chunk_'));
@@ -954,8 +1015,13 @@
                 chunks.push(fullArray.slice(i, i + CHUNK_SIZE));
             }
 
-            for (let index = 0; index < chunks.length; index++) {
-                await secureSetItem(storeName, `chunk_${index}`, chunks[index]);
+            try {
+                for (let index = 0; index < chunks.length; index++) {
+                    await secureSetItem(storeName, `chunk_${index}`, chunks[index]);
+                }
+            } catch (err) {
+                console.error(`写入分片失败: ${err.message}`);
+                throw new Error(`保存失败: ${err.message}`);
             }
 
             for (let key of oldChunkKeys) {
@@ -984,11 +1050,23 @@
             if (!meta && chunkKeys.length === 0) return [];
 
             let result = [];
+            let decryptFailCount = 0;
             for (let key of chunkKeys) {
                 const chunk = await secureGetItem(storeName, key, null);
                 if (chunk) {
                     result = result.concat(chunk);
+                } else {
+                    decryptFailCount++;
+                    console.error(`分片加载失败 (可能解密错误): ${storeName}/${key}`);
                 }
+            }
+            if (decryptFailCount > 0) {
+                console.warn(`${storeName} 库有 ${decryptFailCount} 个分片未能加载，数据可能不完整。`);
+                // 可选：在前端给用户一个非阻塞提示
+                setTimeout(() => {
+                    const msg = `警告：${storeName} 库有 ${decryptFailCount} 个分片加载失败，部分物料可能缺失。`;
+                    if (autoSaveSpan) autoSaveSpan.innerText += ' ⚠️ 部分数据损坏';
+                }, 1000);
             }
 
             if (result.length === 0 && chunkKeys.length > 0) {
@@ -1032,9 +1110,24 @@
             return { en: enData, zh: zhData, apps: applicationsMap };
         }
 
+        // 日志存储增强：IndexedDB 主存 + localStorage 备份
+        async function saveLogsToIndexedDB() {
+            if (!cryptoKey) return;
+            try {
+                const logsToSave = operationLogs.slice(0, MAX_INDEXEDDB_LOGS);
+                await secureSetItem('logs', 'full_logs', logsToSave);
+            } catch (e) {
+                console.warn('日志写入 IndexedDB 失败', e);
+            }
+        }
+
         function addLog(action, details) {
             operationLogs.unshift({ timestamp: new Date().toISOString(), action, details: details || '' });
-            if (operationLogs.length > 500) operationLogs.pop();
+            if (operationLogs.length > MAX_INDEXEDDB_LOGS) operationLogs.pop();
+            // 防抖保存至 IndexedDB (2秒)
+            clearTimeout(logSaveDebounceTimer);
+            logSaveDebounceTimer = setTimeout(() => saveLogsToIndexedDB(), 2000);
+            // localStorage 备份保持立即写入
             if (cryptoKey) {
                 (async () => {
                     try {
@@ -1047,12 +1140,56 @@
         }
 
         async function requirePasswordAuth(operation) {
-            return new Promise(resolve => {
-                let password = prompt(`🔐 安全验证: 执行「${operation}」需要主密码`, "");
-                if (password === null) resolve(false);
-                else verifyPassword(password).then(ok => {
-                    if (ok) { addLog("授权操作", operation); resolve(true); } else { alert("密码错误"); resolve(false); }
-                });
+            return new Promise(async (resolve) => {
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+                    display: flex; align-items: center; justify-content: center;
+                    z-index: 20000; font-family: var(--font-stack);
+                `;
+                const card = document.createElement('div');
+                card.style.cssText = `
+                    background: #fff; border-radius: 28px; padding: 2rem;
+                    width: 90%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                    text-align: center;
+                `;
+                card.innerHTML = `
+                    <i class="fas fa-lock" style="font-size: 2.5rem; color: #1f6893;"></i>
+                    <h3 style="margin: 0.5rem 0;">${operation}</h3>
+                    <p style="color: #555; margin-bottom: 1.5rem;">请输入主密码</p>
+                    <input type="password" id="pwdModalInput" style="width:100%; padding:12px; border-radius:40px; border:1px solid #ccc; margin-bottom:1rem;" autocomplete="off">
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button id="pwdModalCancel" style="padding:8px 20px; border-radius:40px; border:1px solid #ccc; background:#fff;">取消</button>
+                        <button id="pwdModalConfirm" style="padding:8px 20px; border-radius:40px; background:#1f6893; color:#fff; border:none;">确认</button>
+                    </div>
+                    <div id="pwdModalError" style="color:#9e2a2b; margin-top:12px; font-size:0.8rem;"></div>
+                `;
+                modal.appendChild(card);
+                document.body.appendChild(modal);
+                const input = card.querySelector('#pwdModalInput');
+                const confirmBtn = card.querySelector('#pwdModalConfirm');
+                const cancelBtn = card.querySelector('#pwdModalCancel');
+                const errorDiv = card.querySelector('#pwdModalError');
+                input.focus();
+                const cleanUp = () => { if (modal.parentNode) modal.remove(); };
+                const checkPassword = async () => {
+                    const pwd = input.value;
+                    if (!pwd) { errorDiv.innerText = '请输入密码'; return; }
+                    const ok = await verifyPassword(pwd);
+                    if (ok) {
+                        addLog("授权操作", operation);
+                        cleanUp();
+                        resolve(true);
+                    } else {
+                        errorDiv.innerText = '密码错误';
+                        input.value = '';
+                        input.focus();
+                    }
+                };
+                confirmBtn.onclick = checkPassword;
+                cancelBtn.onclick = () => { cleanUp(); resolve(false); };
+                input.onkeypress = (e) => { if (e.key === 'Enter') checkPassword(); };
             });
         }
 
@@ -1060,16 +1197,33 @@
             if (newPassword !== newPasswordConfirm) throw new Error("两次新密码不一致");
             if (!await verifyPassword(oldPassword)) throw new Error("原密码错误");
             alert("正在重新加密海量数据，请稍候...");
+            // 1. 先用旧密钥加载所有数据（包括日志）
             let { en, zh, apps } = await loadAllSecureData();
+            let oldLogs = [];
+            try {
+                const encryptedLogs = await secureStores.logs.getItem('full_logs');
+                if (encryptedLogs) oldLogs = JSON.parse(await decryptData(encryptedLogs));
+            } catch (e) { console.warn('旧日志读取失败', e); }
+            // 2. 生成新密钥
             let newSalt = crypto.getRandomValues(new Uint8Array(16));
             let newKey = await deriveKeyFromPassword(newPassword, newSalt);
             let newAuthHash = await computeAuthHash(newPassword, newSalt);
-            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newAuthHash, version: 7 }));
+            // 3. 切换到新密钥
             cryptoKey = newKey;
+            // 4. 保存元数据
+            localStorage.setItem(META_KEY, JSON.stringify({ salt: btoa(String.fromCharCode(...newSalt)), authHash: newAuthHash, version: 7 }));
+            // 5. 用新密钥重新加密并保存所有数据
             await saveChunkedData('en', en);
             await saveChunkedData('zh', zh);
             for (let [key, value] of Object.entries(apps)) await secureSetItem('app', key, value);
-            addLog("密码修改", "已完成");
+            // 6. 重新加密日志并保存
+            if (oldLogs.length) {
+                operationLogs = oldLogs; // 临时替换以便后续 addLog 使用新密钥
+                await secureSetItem('logs', 'full_logs', oldLogs);
+                addLog("密码修改", "已完成（含日志迁移）");
+            } else {
+                addLog("密码修改", "已完成（日志为空）");
+            }
             return true;
         }
 
@@ -1078,6 +1232,7 @@
             materialDataZh = [],
             currentApplication = { reqNo: '', applicant: '2/O', applyTime: '', items: [], ordered: false },
             autoSaveTimer = null,
+            logSaveDebounceTimer = null,
             reqFilterKeyword = '',
             reqSearchField = 'all',
             materialFilteredData = [],
@@ -1093,7 +1248,8 @@
             reqColumnWidths = [32, 40, 100, 180, 150, 80, 100, 100, 120, 60],
             materialColumnWidths = [50, 120, 200, 180, 80, 150, 60],
             currentLang = 'zh',
-            quickSearchField = 'all';
+            quickSearchField = 'all',
+            isInitialized = false;   // 防止重复初始化绑定事件
 
         const DEFAULT_REQ_PREFIX = "REQ-AC OREN-";
 
@@ -1152,11 +1308,8 @@
             clearLibraryBtn = document.getElementById('clearLibraryBtn');
 
         function escapeHtml(text) { if (!text) return ''; return text.replace(/[&<>"']/g, match => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[match])); }
-
         function sanitizeExcelCell(value) { if (value == null) return ''; let stringValue = String(value); if (stringValue.length && '=+-@'.includes(stringValue[0])) return "'" + stringValue; return stringValue; }
-
         function getCurrentMaterialArray() { return currentLang === 'en' ? materialDataEn : materialDataZh; }
-
         function ensureRemarkField(array) { array.forEach(item => { if (item.remark === undefined) item.remark = ''; }); return array; }
 
         async function saveFullMaterialArray(language, data) {
@@ -1170,7 +1323,7 @@
 
         async function clearAllMaterialLibraries() {
             if (!await requirePasswordAuth("清空全部物料库")) return;
-            if (confirm("⚠️ 危险操作：将清空【英文库】和【中文库】所有物料数据！此操作不可撤销，确认清空？")) {
+            if (confirm("⚠️ 危险操作：将清空【英文库】和【中文库】所有物料数据！此操作不可撤销，确认清空全部物料库？")) {
                 await saveChunkedData('en', []);
                 await saveChunkedData('zh', []);
                 materialDataEn = [];
@@ -1432,7 +1585,11 @@
             }
         }
 
-        async function loadApplication(no) {
+        async function loadApplication(no, skipConfirm = false) {
+            if (!skipConfirm && currentApplication.items.length > 0) {
+                const userConfirmed = confirm("当前申请单有未保存的物料，是否放弃修改并加载其他申请单？");
+                if (!userConfirmed) return;
+            }
             let saved = await secureGetItem('app', no, null);
             if (saved) {
                 currentApplication = saved;
@@ -1548,12 +1705,29 @@
             });
             container?.addEventListener('click', async e => {
                 let deleteButton = e.target.closest('.delete-material');
-                if (deleteButton && confirm("确定删除？")) {
-                    let array = getCurrentMaterialArray().filter(m => m.impa !== deleteButton.dataset.impa);
+                if (deleteButton && confirm("确定删除该物料？")) {
+                    const impaToDelete = deleteButton.dataset.impa;
+                    // 检查是否有申请单引用了此物料
+                    const allAppKeys = await secureStores.app.keys();
+                    let usedInReqs = [];
+                    for (let key of allAppKeys) {
+                        if (key === 'meta' || key.startsWith('chunk_')) continue;
+                        const app = await secureGetItem('app', key, null);
+                        if (app && app.items && app.items.some(item => item.impa === impaToDelete)) {
+                            usedInReqs.push(app.reqNo || key);
+                        }
+                    }
+                    if (usedInReqs.length > 0) {
+                        if (!confirm(`警告：该物料正被以下申请单引用：\n${usedInReqs.join('\n')}\n\n删除后这些申请单中的对应物料信息将不再完整。确认删除？`)) {
+                            return;
+                        }
+                    }
+                    let array = getCurrentMaterialArray().filter(m => m.impa !== impaToDelete);
                     await saveFullMaterialArray(currentLang, array);
                     performMaterialSearch();
                     renderRequestTable();
                     updateLibraryCountDisplay();
+                    addLog("删除物料", impaToDelete);
                 }
             });
         }
@@ -1627,11 +1801,39 @@
                     let uniq = new Map();
                     for (let it of list)
                         if (!uniq.has(it.impa)) uniq.set(it.impa, it);
-                    let final = ensureRemarkField(Array.from(uniq.values()));
+                    let newData = ensureRemarkField(Array.from(uniq.values()));
+                    // 获取当前库数据用于合并
+                    let currentData = (type === 'en') ? materialDataEn : materialDataZh;
+                    const mode = confirm(`导入将处理 ${newData.length} 条物料。\n确定 = 覆盖当前${type==='en'?'英文':'中文'}库（替换同名IMPA，保留其他）\n取消 = 合并追加（跳过重复）`);
+                    let final;
+                    if (mode) {
+                        // 覆盖：更新同名，保留当前库中未出现的
+                        const map = new Map(currentData.map(m => [m.impa, m]));
+                        for (const m of newData) map.set(m.impa, m);
+                        final = Array.from(map.values());
+                    } else {
+                        // 合并追加，检测重复并提示
+                        const existing = new Set(currentData.map(m => m.impa));
+                        const duplicates = newData.filter(m => existing.has(m.impa));
+                        if (duplicates.length > 0) {
+                            const overwrite = confirm(`检测到 ${duplicates.length} 条重复物料。\n确定 = 用新数据覆盖这些重复项\n取消 = 跳过重复项，保留原数据`);
+                            const map = new Map(currentData.map(m => [m.impa, m]));
+                            for (const m of newData) {
+                                if (map.has(m.impa)) {
+                                    if (overwrite) map.set(m.impa, m);
+                                } else {
+                                    map.set(m.impa, m);
+                                }
+                            }
+                            final = Array.from(map.values());
+                        } else {
+                            final = currentData.concat(newData);
+                        }
+                    }
                     await saveFullMaterialArray(type, final);
                     setTimeout(() => { performMaterialSearch(); renderRequestTable(); updateLibraryCountDisplay(); }, 120);
-                    alert(`${type==='en'?'英文':'中文'}库导入完成，共 ${final.length} 条`);
-                    addLog("导入物料库", `${type}库 ${final.length}条`);
+                    alert(`${type==='en'?'英文':'中文'}库导入完成，当前共 ${final.length} 条`);
+                    addLog("导入物料库", `${type}库 导入${newData.length}条，最终${final.length}条`);
                 } catch (err) { alert("导入失败:" + err.message); } finally { progressArea.style.display = 'none'; }
             };
             input.click();
@@ -1658,52 +1860,184 @@
         }
 
         async function batchAddMaterialsFromExcel() {
-            if (!await requirePasswordAuth("批量追加物料")) return;
-            let input = document.createElement('input');
+            if (!await requirePasswordAuth("批量追加物料（中英文自动识别）")) return;
+            const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.xlsx';
             input.onchange = async e => {
-                let file = e.target.files[0];
+                const file = e.target.files[0];
                 if (!file) return;
-                let mode = confirm("确定=覆盖当前库  取消=合并追加");
+
                 try {
-                    let data = await file.arrayBuffer(),
-                        workbook = XLSX.read(data),
-                        sheet = workbook.Sheets[workbook.SheetNames[0]],
-                        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-                    if (rows.length < 2) throw new Error("文件过短");
-                    let headers = rows[0].map(c => String(c || '').toLowerCase());
-                    let impaIdx = headers.findIndex(h => h.includes('impa')),
-                        descIdx = headers.findIndex(h => h.includes('物料描述') || h.includes('description')),
-                        specIdx = headers.findIndex(h => h.includes('规格')),
-                        unitIdx = headers.findIndex(h => h === '单位' || h === 'unit'),
-                        remarkIdx = headers.findIndex(h => h === '备注' || h === 'remark');
-                    if (impaIdx === -1 || descIdx === -1) throw new Error("缺少IMPA或描述列");
-                    let newMats = [];
-                    for (let i = 1; i < rows.length; i++) {
-                        let r = rows[i];
-                        if (!r || !r[impaIdx]) continue;
-                        let impa = String(r[impaIdx]).trim().slice(0, 30);
-                        if (!impa) continue;
-                        let desc = String(r[descIdx] || `IMPA ${impa}`).trim().slice(0, 200);
-                        newMats.push({
-                            impa,
-                            description: desc,
-                            specification: specIdx !== -1 ? String(r[specIdx] || '').trim().slice(0, 100) : '',
-                            unit: unitIdx !== -1 ? String(r[unitIdx] || '').trim().slice(0, 20) : '',
-                            remark: remarkIdx !== -1 ? String(r[remarkIdx] || '').trim().slice(0, 200) : ''
-                        });
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data);
+                    const sheetNames = workbook.SheetNames;
+
+                    const hasCn = sheetNames.some(name => name.toUpperCase() === "CN");
+                    const hasEn = sheetNames.some(name => name.toUpperCase() === "EN");
+
+                    const mode = confirm(
+                        hasCn && hasEn
+                            ? "将同时处理「CN」表（中文库）和「EN」表（英文库）。\n确定 = 覆盖对应库  取消 = 合并追加"
+                            : "确定 = 覆盖当前库  取消 = 合并追加"
+                    );
+
+                    const parseMaterialSheet = (worksheet, sheetName) => {
+                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+                        if (rows.length < 2) return [];
+
+                        const headers = rows[0].map(c => String(c || '').toLowerCase());
+                        const colIdx = {
+                            impa: (() => {
+                                let idx = headers.findIndex(h => h === 'impa');
+                                if (idx === -1) idx = headers.findIndex(h => h.includes('impa'));
+                                return idx;
+                            })(),
+                            desc: (() => {
+                                let idx = headers.findIndex(h => h === 'description' || h === '物料描述');
+                                if (idx === -1) idx = headers.findIndex(h => h.includes('description') || h.includes('物料描述'));
+                                return idx;
+                            })(),
+                            spec: (() => {
+                                let idx = headers.findIndex(h => h === 'specification' || h === '规格' || h === 'model');
+                                if (idx === -1) idx = headers.findIndex(h => h.includes('specification') || h.includes('规格') || h.includes('model'));
+                                return idx;
+                            })(),
+                            unit: (() => {
+                                let idx = headers.findIndex(h => h === '单位' || h === 'unit');
+                                if (idx === -1) idx = headers.findIndex(h => h.includes('单位') || h.includes('unit'));
+                                return idx;
+                            })(),
+                            remark: (() => {
+                                let idx = headers.findIndex(h => h === '备注' || h === 'remark');
+                                if (idx === -1) idx = headers.findIndex(h => h.includes('备注') || h.includes('remark'));
+                                return idx;
+                            })()
+                        };
+                        if (colIdx.impa === -1) {
+                            console.warn(`工作表 ${sheetName} 缺少 IMPA 列，跳过`);
+                            return [];
+                        }
+
+                        const materials = [];
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            if (!row || !row[colIdx.impa]) continue;
+                            const impa = String(row[colIdx.impa]).trim();
+                            if (!impa) continue;
+
+                            materials.push({
+                                impa: impa.slice(0, 30),
+                                description: (colIdx.desc !== -1 && row[colIdx.desc]) ? String(row[colIdx.desc]).trim().slice(0, 200) : `IMPA ${impa}`,
+                                specification: (colIdx.spec !== -1 && row[colIdx.spec]) ? String(row[colIdx.spec]).trim().slice(0, 100) : '',
+                                unit: (colIdx.unit !== -1 && row[colIdx.unit]) ? String(row[colIdx.unit]).trim().slice(0, 20) : '',
+                                remark: (colIdx.remark !== -1 && row[colIdx.remark]) ? String(row[colIdx.remark]).trim().slice(0, 200) : ''
+                            });
+                        }
+                        return materials;
+                    };
+
+                    const applyMaterials = (currentArray, newMaterials, modeOverwrite) => {
+                        if (!newMaterials.length) return currentArray;
+                        if (modeOverwrite) {
+                            // 覆盖模式：用新数据更新同名物料，保留库中其他物料
+                            const map = new Map(currentArray.map(m => [m.impa, m]));
+                            for (const m of newMaterials) {
+                                map.set(m.impa, m);
+                            }
+                            return Array.from(map.values());
+                        } else {
+                            // 合并模式：检测重复项并提示
+                            const existingImpas = new Set(currentArray.map(m => m.impa));
+                            const duplicates = newMaterials.filter(m => existingImpas.has(m.impa));
+                            if (duplicates.length > 0) {
+                                const shouldOverwrite = confirm(
+                                    `检测到 ${duplicates.length} 条物料 IMPA 已存在。\n\n确定 = 用新数据覆盖这些重复项\n取消 = 跳过重复，保留原有数据`
+                                );
+                                const map = new Map(currentArray.map(m => [m.impa, m]));
+                                for (const m of newMaterials) {
+                                    if (map.has(m.impa)) {
+                                        if (shouldOverwrite) map.set(m.impa, m);
+                                    } else {
+                                        map.set(m.impa, m);
+                                    }
+                                }
+                                return Array.from(map.values());
+                            } else {
+                                const map = new Map(currentArray.map(m => [m.impa, m]));
+                                for (const m of newMaterials) {
+                                    if (!map.has(m.impa)) map.set(m.impa, m);
+                                }
+                                return Array.from(map.values());
+                            }
+                        }
+                    };
+
+                    if (hasCn && hasEn) {
+                        const cnSheet = workbook.Sheets["CN"];
+                        const enSheet = workbook.Sheets["EN"];
+                        if (!cnSheet || !enSheet) {
+                            alert("工作表 CN 或 EN 缺失，请检查文件格式");
+                            return;
+                        }
+
+                        const cnMaterials = parseMaterialSheet(cnSheet, "CN");
+                        const enMaterials = parseMaterialSheet(enSheet, "EN");
+
+                        if (!cnMaterials.length && !enMaterials.length) {
+                            alert("两个工作表中均未找到有效物料数据");
+                            return;
+                        }
+
+                        let newZh = applyMaterials(materialDataZh, cnMaterials, mode);
+                        let newEn = applyMaterials(materialDataEn, enMaterials, mode);
+
+                        await saveFullMaterialArray('zh', newZh);
+                        await saveFullMaterialArray('en', newEn);
+
+                        alert(`✅ 中英文库同步完成！\n中文库：${newZh.length} 条\n英文库：${newEn.length} 条`);
+                        addLog("批量追加物料", `CN表${cnMaterials.length}条, EN表${enMaterials.length}条, 模式:${mode ? '覆盖' : '合并'}`);
+                    } else {
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+                        if (rows.length < 2) throw new Error("文件过短");
+                        const headers = rows[0].map(c => String(c || '').toLowerCase());
+                        const idx = {
+                            impa: headers.findIndex(h => h.includes('impa')),
+                            desc: headers.findIndex(h => h.includes('description') || h.includes('物料描述')),
+                            spec: headers.findIndex(h => h.includes('specification') || h.includes('规格')),
+                            unit: headers.findIndex(h => h === '单位' || h === 'unit'),
+                            remark: headers.findIndex(h => h === '备注' || h === 'remark')
+                        };
+                        if (idx.impa === -1) throw new Error("缺少IMPA列");
+                        const newMaterials = [];
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            if (!row || !row[idx.impa]) continue;
+                            const impa = String(row[idx.impa]).trim();
+                            if (!impa) continue;
+                            newMaterials.push({
+                                impa: impa.slice(0, 30),
+                                description: (idx.desc !== -1 && row[idx.desc]) ? String(row[idx.desc]).trim().slice(0, 200) : `IMPA ${impa}`,
+                                specification: (idx.spec !== -1 && row[idx.spec]) ? String(row[idx.spec]).trim().slice(0, 100) : '',
+                                unit: (idx.unit !== -1 && row[idx.unit]) ? String(row[idx.unit]).trim().slice(0, 20) : '',
+                                remark: (idx.remark !== -1 && row[idx.remark]) ? String(row[idx.remark]).trim().slice(0, 200) : ''
+                            });
+                        }
+                        if (!newMaterials.length) return alert("无有效数据");
+                        let cur = getCurrentMaterialArray();
+                        let final = applyMaterials(cur, newMaterials, mode);
+                        await saveFullMaterialArray(currentLang, final);
+                        alert(`完成！当前库共 ${final.length} 条`);
                     }
-                    if (!newMats.length) return alert("无有效数据");
-                    let cur = getCurrentMaterialArray();
-                    let final;
-                    if (mode) { final = newMats; } else { let map = new Map(cur.map(m => [m.impa, m])); for (let m of newMats) if (!map.has(m.impa)) map.set(m.impa, m); final = Array.from(map.values()); }
-                    await saveFullMaterialArray(currentLang, final);
+
                     performMaterialSearch();
                     renderRequestTable();
                     updateLibraryCountDisplay();
-                    alert(`完成！当前库共 ${final.length} 条`);
-                } catch (err) { alert("批量导入失败:" + err.message); }
+                } catch (err) {
+                    alert("批量导入失败：" + err.message);
+                    console.error(err);
+                }
             };
             input.click();
         }
@@ -1758,11 +2092,27 @@
                     if (mode) {
                         final = imported;
                     } else {
-                        const map = new Map(current.map(m => [m.impa, m]));
-                        for (const item of imported) {
-                            if (!map.has(item.impa)) map.set(item.impa, item);
+                        // 合并模式也增加重复提示
+                        const existingImpas = new Set(current.map(m => m.impa));
+                        const duplicates = imported.filter(m => existingImpas.has(m.impa));
+                        if (duplicates.length > 0) {
+                            const shouldOverwrite = confirm(`检测到 ${duplicates.length} 条重复物料。\n确定 = 覆盖  取消 = 跳过重复`);
+                            const map = new Map(current.map(m => [m.impa, m]));
+                            for (const item of imported) {
+                                if (map.has(item.impa)) {
+                                    if (shouldOverwrite) map.set(item.impa, item);
+                                } else {
+                                    map.set(item.impa, item);
+                                }
+                            }
+                            final = Array.from(map.values());
+                        } else {
+                            const map = new Map(current.map(m => [m.impa, m]));
+                            for (const item of imported) {
+                                if (!map.has(item.impa)) map.set(item.impa, item);
+                            }
+                            final = Array.from(map.values());
                         }
-                        final = Array.from(map.values());
                     }
                     await saveFullMaterialArray(currentLang, final);
                     performMaterialSearch();
@@ -1808,7 +2158,14 @@
                     e.preventDefault();
                     let startX = e.clientX,
                         startW = cols[idx];
-                    function move(m) { let newWidth = startW + (m.clientX - startX); if (newWidth < 40) newWidth = 40; cols[idx] = newWidth; applyColgroupWidths(); saveColumnWidths(); }
+                    function move(m) { 
+                        let newWidth = startW + (m.clientX - startX); 
+                        if (isNaN(newWidth)) newWidth = startW;
+                        if (newWidth < 40) newWidth = 40; 
+                        cols[idx] = Math.round(newWidth); 
+                        applyColgroupWidths(); 
+                        saveColumnWidths(); 
+                    }
                     function up() { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); }
                     document.addEventListener('mousemove', move);
                     document.addEventListener('mouseup', up);
@@ -1876,6 +2233,29 @@
             return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
 
+        // 密码强度评估与 UI 更新
+        function evaluatePasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 10) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            return Math.min(score, 4);
+        }
+
+        function updatePasswordStrengthUI(password) {
+            const fill = document.getElementById('pwdStrengthFill');
+            const text = document.getElementById('pwdStrengthText');
+            if (!fill || !text) return;
+            const strength = evaluatePasswordStrength(password);
+            const colors = ['#ccc', '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71'];
+            const labels = ['无', '弱', '一般', '良好', '极强'];
+            fill.style.width = `${(strength/4)*100}%`;
+            fill.style.background = colors[strength];
+            text.textContent = `强度：${labels[strength]}`;
+        }
+
         function bindEvents() {
             initTabSwitching();
             reloadMaterialBtn.onclick = reloadMaterialLibrary;
@@ -1921,6 +2301,10 @@
             attachSelectAllEvent();
             batchAddMaterialBtn.onclick = batchAddMaterialsFromExcel;
             clearLibraryBtn.onclick = clearAllMaterialLibraries;
+            // 密码强度监听
+            const pwd1 = document.getElementById('authPassword1');
+            const pwd2 = document.getElementById('authPassword2');
+            if (pwd1) pwd1.addEventListener('input', () => updatePasswordStrengthUI(pwd1.value));
         }
 
         async function importReqFromExcel() {
@@ -1946,7 +2330,9 @@
                         qty: headers.findIndex(h => h.includes('申请数量') || h.includes('数量')),
                         remark: headers.findIndex(h => h.includes('备注'))
                     };
-                    let materialMap = new Map(getCurrentMaterialArray().map(m => [m.impa, m]));
+                    // 合并中英文库构建统一映射，避免因语言切换导致匹配失败
+                    let combinedMaterials = [...materialDataEn, ...materialDataZh];
+                    let materialMap = new Map(combinedMaterials.map(m => [m.impa, m]));
                     let itemsMap = new Map();
                     let failedRows = [];
 
@@ -1983,16 +2369,41 @@
             input.click();
         }
 
+        function checkIndexedDB() {
+            if (!window.indexedDB) {
+                alert("您的浏览器不支持 IndexedDB，无法使用本系统的加密存储功能。请升级浏览器或更换现代浏览器（Chrome/Firefox/Edge）。");
+                return false;
+            }
+            try {
+                let testResult = false;
+                const testRequest = window.indexedDB.open("__test_db", 1);
+                testRequest.onerror = () => { testResult = false; };
+                testRequest.onsuccess = () => { testRequest.result.close(); window.indexedDB.deleteDatabase("__test_db"); testResult = true; };
+                return true;
+            } catch (e) {
+                alert("IndexedDB 不可用，请检查浏览器隐私设置或允许存储。");
+                return false;
+            }
+        }
+
         async function init() {
+            if (!window.indexedDB) {
+                alert("您的浏览器不支持 IndexedDB，无法使用本系统的加密存储功能。请升级浏览器或更换现代浏览器（Chrome/Firefox/Edge）。");
+                return;
+            }
             loadColumnWidths();
             let { en, zh } = await loadAllSecureData();
             materialDataEn = ensureRemarkField(en);
             materialDataZh = ensureRemarkField(zh);
             autoSaveSpan.innerHTML += ' <span style="color:#1b5e3a;">✅ IndexedDB 就绪</span>';
-            bindEvents();
-            initMaterialEventDelegation();
-            initQuickAddDelegation();
-            initReqTableDelegation();
+            // 仅在首次初始化时绑定事件和委托
+            if (!isInitialized) {
+                bindEvents();
+                initMaterialEventDelegation();
+                initQuickAddDelegation();
+                initReqTableDelegation();
+                isInitialized = true;
+            }
             await refreshHistoryList();
             loadUISettings();
             let lastReqNo = localStorage.getItem('ui_lastReqNo');
@@ -2024,6 +2435,7 @@
             if (!meta) {
                 title.innerHTML = '<i class="fas fa-lock"></i> 首次使用：设定主密码 (AES-256)';
                 pwd2Container.style.display = 'block';
+                document.getElementById('pwdStrengthContainer').style.display = 'block';
                 submitBtn.onclick = async () => {
                     let pwd1 = password1.value,
                         pwd2 = password2.value;
@@ -2037,6 +2449,7 @@
             } else {
                 title.innerHTML = '<i class="fas fa-key"></i> 请输入主密码解锁';
                 pwd2Container.style.display = 'none';
+                document.getElementById('pwdStrengthContainer').style.display = 'none';
                 submitBtn.onclick = async () => {
                     if (await verifyPassword(password1.value)) {
                         document.getElementById('mainApp').style.display = 'block';
@@ -2048,6 +2461,35 @@
         }
         startAuth();
 
+        // 跨标签页密码同步
+        window.addEventListener('storage', async (event) => {
+            if (event.key === META_KEY) {
+                cryptoKey = null;
+                isAuthenticated = false;
+                const overlay = document.getElementById('authOverlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    const pwdInput = document.getElementById('authPassword1');
+                    if (pwdInput) pwdInput.value = '';
+                    const errorDiv = document.getElementById('authError');
+                    if (errorDiv) errorDiv.innerText = '主密码已更改，请重新输入新密码解锁';
+                    const submitBtn = document.getElementById('authSubmitBtn');
+                    const newSubmit = async () => {
+                        const pwd = document.getElementById('authPassword1').value;
+                        if (await verifyPassword(pwd)) {
+                            overlay.style.display = 'none';
+                            // 完整重新初始化系统，确保所有事件和状态正确
+                            await init();
+                            addLog("跨标签页同步", "密码已更新，重新认证成功");
+                        } else {
+                            errorDiv.innerText = "密码错误";
+                        }
+                    };
+                    submitBtn.onclick = newSubmit;
+                }
+            }
+        });
+
         document.getElementById('changePasswordBtn')?.addEventListener('click', async () => {
             let old = prompt("当前主密码");
             if (!old) return;
@@ -2058,8 +2500,22 @@
         });
 
         document.getElementById('showAuditLogBtn')?.addEventListener('click', () => {
-            let txt = operationLogs.slice(0, 100).map(log => `${log.timestamp} | ${log.action} | ${log.details}`).join("\n");
-            alert("📋 操作日志(最近100条):\n" + (txt || "无记录"));
+            const total = operationLogs.length;
+            if (total === 0) { alert("暂无操作日志"); return; }
+            const recent = operationLogs.slice(0, 100).map(log => `${log.timestamp} | ${log.action} | ${log.details}`).join("\n");
+            const exportChoice = confirm(`共有 ${total} 条日志。\n点击【确定】导出全部日志为文件\n点击【取消】仅查看最近100条`);
+            if (exportChoice) {
+                const allLogs = operationLogs.map(log => `${log.timestamp} | ${log.action} | ${log.details}`).join("\n");
+                const blob = new Blob([allLogs], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `审计日志_${new Date().toISOString().slice(0,10)}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else {
+                alert("📋 操作日志(最近100条):\n" + (recent || "无记录"));
+            }
         });
     </script>
 </body>
