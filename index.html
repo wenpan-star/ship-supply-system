@@ -3,8 +3,8 @@
 <head>
     <!--
     =====================================================================
-    船舶物料申请系统 · 灵韵旗舰版 v10.9
-    更新说明 (v10.8 → v10.9)：
+    船舶物料申请系统 · 灵韵旗舰版 v12.7.0
+    更新说明 (v12.6 → v12.7)：
     1. 修复数量输入无法设置为0的问题。
     2. 修复init()中状态提示文本重复追加的问题。
     3. 修复授权验证时覆盖未保存审计日志的问题（verifyPassword增加loadLogs参数）。
@@ -22,7 +22,7 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v10.9</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v12.7.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 外部库改为CDN加载，避免本地路径问题 -->
@@ -743,7 +743,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v10.9 · 安全增强</div>
+                <div class="version-corner">v12.7.0 · 安全增强</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -911,7 +911,7 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v10.9 增强版) ==========
+        // ========== 安全与存储核心 (v12.7.0 增强版) ==========
         let cryptoKey = null;
         let isAuthenticated = false;
         let operationLogs = [];
@@ -995,7 +995,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v10.9 增强版");
+            addLog("系统初始化", "v12.7.0 增强版");
             return true;
         }
 
@@ -1039,6 +1039,10 @@
 
         // 分块存储逻辑（支持增量保存）
         async function saveChunkedData(storeName, fullArray, forceFullSave = false) {
+            // 数据损坏检测：如果已检测到解密失败，阻止写操作避免覆盖损坏数据
+            if (dataCorruptionDetected) {
+                throw new Error('检测到数据损坏，已阻止保存操作。请先处理数据损坏问题（导出备份或重新登录）。');
+            }
             const allKeys = await secureStores[storeName].keys();
             const oldChunkKeys = allKeys.filter(key => key.startsWith('chunk_'));
 
@@ -1124,19 +1128,33 @@
             }
             if (decryptFailCount > 0) {
                 console.warn(`${storeName} 库有 ${decryptFailCount} 个分片未能加载，数据可能不完整。`);
+                // 设置数据损坏标志，阻止后续写操作覆盖可能损坏的数据
+                dataCorruptionDetected = true;
                 setTimeout(() => {
-                    if (autoSaveSpan) autoSaveSpan.innerText += ' ⚠️ 部分数据损坏';
+                    if (autoSaveSpan) autoSaveSpan.innerText += ' ⚠️ 部分数据损坏，已阻止自动保存';
                 }, 1000);
             }
 
             if (result.length === 0 && chunkKeys.length > 0) {
                 console.error(`严重警告：${storeName} 所有分片解密均失败，可能密钥不匹配。`);
+                dataCorruptionDetected = true;
+                setTimeout(() => {
+                    alert('⚠️ 检测到数据解密失败（可能密钥不匹配或数据损坏）。\n\n系统已阻止自动保存，请立即导出备份或检查密码是否正确，避免数据永久丢失。');
+                }, 500);
             }
 
-            if (meta && result.length !== meta.total) {
-                await secureSetItem(storeName, 'meta', { chunkCount: chunkKeys.length, total: result.length });
-            } else if (!meta && result.length > 0) {
-                await secureSetItem(storeName, 'meta', { chunkCount: chunkKeys.length, total: result.length });
+            // 元数据更新不应受数据损坏标志限制，因为元数据只记录数量，不覆盖实际数据分片
+            // 使用直接写入方式，绕过 secureSetItem 的损坏检查
+            try {
+                if (meta && result.length !== meta.total) {
+                    const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
+                    await secureStores[storeName].setItem('meta', encryptedMeta);
+                } else if (!meta && result.length > 0) {
+                    const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
+                    await secureStores[storeName].setItem('meta', encryptedMeta);
+                }
+            } catch (metaError) {
+                console.warn(`更新 ${storeName} 元数据失败:`, metaError);
             }
 
             const chunks = [];
@@ -1149,6 +1167,10 @@
         }
 
         async function secureSetItem(store, key, value) {
+            // 数据损坏检测：阻止写操作避免覆盖可能损坏的数据
+            if (dataCorruptionDetected) {
+                throw new Error('检测到数据损坏，已阻止写入操作。');
+            }
             await secureStores[store].setItem(key, await encryptData(JSON.stringify(value)));
         }
 
@@ -1220,7 +1242,13 @@
             }
         }
 
+        let authModalOpen = false; // 防止二次授权模态框重复打开
         async function requirePasswordAuth(operation) {
+            if (authModalOpen) {
+                alert('已有授权操作正在进行，请先完成当前操作');
+                return false;
+            }
+            authModalOpen = true;
             return new Promise(async (resolve) => {
                 const modal = document.createElement('div');
                 modal.style.cssText = `
@@ -1253,7 +1281,10 @@
                 const cancelBtn = card.querySelector('#pwdModalCancel');
                 const errorDiv = card.querySelector('#pwdModalError');
                 input.focus();
-                const cleanUp = () => { if (modal.parentNode) modal.remove(); };
+                const cleanUp = () => {
+                    if (modal.parentNode) modal.remove();
+                    authModalOpen = false;
+                };
                 const checkPassword = async () => {
                     if (Date.now() < loginLockoutUntil) {
                         const remainingSeconds = Math.ceil((loginLockoutUntil - Date.now()) / 1000);
@@ -1385,6 +1416,12 @@
             };
 
             try {
+                if (dataCorruptionDetected) {
+                    const continueAnyway = confirm('⚠️ 检测到数据损坏，继续修改密码可能导致部分数据永久丢失。\n\n建议先导出备份。是否仍要继续？');
+                    if (!continueAnyway) {
+                        throw new Error('操作已取消');
+                    }
+                }
                 await updateProgress(5, '读取旧数据...');
                 let { en, zh, apps } = await loadAllSecureData();
                 let oldLogs = [];
@@ -1491,6 +1528,8 @@
             en: null,
             zh: null
         };
+        // 数据损坏检测标志：当检测到解密失败时设置为 true，阻止后续写操作避免覆盖损坏数据
+        let dataCorruptionDetected = false;
 
         const DEFAULT_REQ_PREFIX = "REQ-AC OREN-";
 
@@ -1710,6 +1749,11 @@
         let materialSearchTaskId = 0; // 用于处理竞态
         async function performMaterialSearchChunked(keyword, field, currentArray) {
             const taskId = ++materialSearchTaskId;
+            // 清理之前的定时器，防止快速输入时堆积
+            if (materialSearchChunkTimer) {
+                clearTimeout(materialSearchChunkTimer);
+                materialSearchChunkTimer = null;
+            }
             if (currentLibraryCountSpan) currentLibraryCountSpan.innerText = '搜索中...';
 
             const chunkSize = 5000;
@@ -1886,8 +1930,14 @@
             }
 
             let html = '';
+            // 构建 item -> 原始索引 的映射，避免 indexOf 的 O(n²) 性能问题
+            const itemIndexMap = new Map();
+            for (let i = 0; i < currentApplication.items.length; i++) {
+                itemIndexMap.set(currentApplication.items[i], i);
+            }
             filtered.forEach((item, displayIndex) => {
-                let originalIndex = currentApplication.items.indexOf(item);
+                let originalIndex = itemIndexMap.get(item);
+                if (originalIndex === undefined) originalIndex = -1; // 理论上不应该发生
                 let manualStock = item.manualStock ?? 0;
                 // 修复：数量为0时应正确显示0，而不是被 || 运算符替换为1
                 let quantityValue = (item.quantity !== undefined && item.quantity !== null) ? item.quantity : 1;
@@ -2101,13 +2151,14 @@
                 let keys = await secureStores.app.keys();
                 historyReqSelect.innerHTML = '<option value="">-- 已保存的申请单 --</option>';
                 // 过滤掉备份键和元数据键
-                keys.forEach(key => {
-                    if (!key.startsWith('chunk_') && key !== 'meta' && !key.startsWith('backup_')) {
-                        let option = document.createElement('option');
-                        option.value = key;
-                        option.textContent = key;
-                        historyReqSelect.appendChild(option);
-                    }
+                const validKeys = keys.filter(key => !key.startsWith('chunk_') && key !== 'meta' && !key.startsWith('backup_'));
+                // 按申请单号排序，方便用户查找
+                validKeys.sort((a, b) => a.localeCompare(b));
+                validKeys.forEach(key => {
+                    let option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = key;
+                    historyReqSelect.appendChild(option);
                 });
                 return true;
             } catch (error) {
@@ -2127,11 +2178,15 @@
                     await secureStores.app.removeItem(no);
                     await refreshHistoryList();
                     if (currentApplication.reqNo === no) {
-                        currentApplication = { reqNo: '', applicant: '2/O', applyTime: '', items: [], ordered: false };
-                        reqSerialInput.value = '';
+                        // 自动创建新的默认申请单，避免用户需要手动点击新建
+                        let localDate = getLocalDatetimeString().split('T')[0];
+                        let newNo = `${DEFAULT_REQ_PREFIX}${localDate}`;
+                        currentApplication = { reqNo: newNo, applicant: '2/O', applyTime: getLocalDatetimeString(), items: [], ordered: false };
+                        reqSerialInput.value = newNo;
                         applicantInput.value = '2/O';
-                        applyTimeInput.value = '';
+                        applyTimeInput.value = getLocalDatetimeString();
                         renderRequestTable();
+                        await persistCurrentApplication(true);
                     }
                     addLog("删除申请单", no);
                     autoSaveSpan.innerText = `已删除 ${no}`;
@@ -2160,6 +2215,8 @@
                 renderRequestTable();
                 autoSaveSpan.innerText = `📋 已加载 ${no}`;
             } else {
+                const createNew = confirm(`申请单 ${no} 不存在。是否创建新的空申请单？`);
+                if (!createNew) return;
                 currentApplication = { reqNo: no, applicant: applicantInput.value, applyTime: applyTimeInput.value, items: [], ordered: false };
                 renderRequestTable();
                 await persistCurrentApplication(true);
@@ -2204,16 +2261,31 @@
             }
             let library = getCurrentMaterialArray();
             let field = quickSearchFieldSelect.value;
-            let filtered = library.filter(m => {
-                if (field === 'impa') return m.impa.toLowerCase().includes(keyword);
-                if (field === 'description') return m.description.toLowerCase().includes(keyword);
-                if (field === 'specification') return (m.specification || '').toLowerCase().includes(keyword);
-                if (field === 'remark') return (m.remark || '').toLowerCase().includes(keyword);
-                return m.impa.toLowerCase().includes(keyword) ||
-                       m.description.toLowerCase().includes(keyword) ||
-                       (m.specification || '').toLowerCase().includes(keyword) ||
-                       (m.remark || '').toLowerCase().includes(keyword);
-            }).slice(0, 20);
+            let filtered = [];
+            const maxResults = 20;
+            // 优化：手动循环，找到 maxResults 个结果后提前退出，避免全量遍历
+            for (let i = 0; i < library.length; i++) {
+                const m = library[i];
+                let match = false;
+                if (field === 'impa') {
+                    match = m.impa.toLowerCase().includes(keyword);
+                } else if (field === 'description') {
+                    match = m.description.toLowerCase().includes(keyword);
+                } else if (field === 'specification') {
+                    match = (m.specification || '').toLowerCase().includes(keyword);
+                } else if (field === 'remark') {
+                    match = (m.remark || '').toLowerCase().includes(keyword);
+                } else {
+                    match = m.impa.toLowerCase().includes(keyword) ||
+                            m.description.toLowerCase().includes(keyword) ||
+                            (m.specification || '').toLowerCase().includes(keyword) ||
+                            (m.remark || '').toLowerCase().includes(keyword);
+                }
+                if (match) {
+                    filtered.push(m);
+                    if (filtered.length >= maxResults) break;
+                }
+            }
 
             if (!filtered.length) {
                 quickSearchTbody.innerHTML = '<tr><td colspan="5">未找到</td></tr>';
@@ -2397,12 +2469,22 @@
                             descInput.focus();
                             return;
                         }
+                        // 保存旧值，便于失败时回滚
+                        const oldDesc = material.description;
+                        const oldSpec = material.specification;
+                        const oldUnit = material.unit;
+                        const oldRemark = material.remark;
                         material.description = newDesc;
                         material.specification = newSpec;
                         material.unit = newUnit;
                         material.remark = newRemark;
                         const saved = await saveFullMaterialArray(currentLang, array);
                         if (!saved) {
+                            // 保存失败，恢复内存中的旧值
+                            material.description = oldDesc;
+                            material.specification = oldSpec;
+                            material.unit = oldUnit;
+                            material.remark = oldRemark;
                             errorDiv.innerText = '保存失败，请重试';
                             return;
                         }
@@ -2775,9 +2857,15 @@
             applicantInput.value = "2/O";
             applyTimeInput.value = getLocalDatetimeString();
             await loadApplication(demoNo, true); // skip confirm
-            window.onbeforeunload = () => {
-                if (currentApplication.reqNo) persistCurrentApplication(false);
+            window.onbeforeunload = (e) => {
                 saveUISettings();
+                // 由于加密保存是异步的，beforeunload 不会等待 Promise 完成
+                // 如果当前申请单有未保存的更改，提示用户
+                if (currentApplication && currentApplication.reqNo) {
+                    e.preventDefault();
+                    e.returnValue = '当前申请单可能有未保存的更改，确定要离开吗？';
+                    return e.returnValue;
+                }
             };
             updateLibraryCountDisplay();
             updateReqSortIndicators();
@@ -2889,11 +2977,11 @@
                 remark: newRemark.value.trim().slice(0, 200)
             };
             let arr = getCurrentMaterialArray();
-            arr.push(newMat);
-            const saved = await saveFullMaterialArray(currentLang, arr);
+            // 使用副本进行保存，避免直接修改全局数组导致失败时状态不一致
+            const newArr = [...arr, newMat];
+            const saved = await saveFullMaterialArray(currentLang, newArr);
             if (!saved) {
-                // 保存失败，回滚内存中的修改
-                arr.pop();
+                // 保存失败，全局数组未被修改，无需回滚
                 return;
             }
             performMaterialSearch();
@@ -3192,8 +3280,21 @@
                             continue;
                         }
                         let material = materialMap.get(impa);
-                        let qty = column.qty !== -1 ? Math.max(0, parseFloat(row[column.qty]) || 1) : 1;
-                        let stock = column.stock !== -1 ? Math.max(0, parseFloat(row[column.stock]) || 0) : 0;
+                        // 修复：数量为 0 时应正确保留 0，而不是被 || 替换为 1
+                        let qty = 1;
+                        if (column.qty !== -1) {
+                            const parsedQty = parseFloat(row[column.qty]);
+                            if (!isNaN(parsedQty)) {
+                                qty = Math.max(0, parsedQty);
+                            }
+                        }
+                        let stock = 0;
+                        if (column.stock !== -1) {
+                            const parsedStock = parseFloat(row[column.stock]);
+                            if (!isNaN(parsedStock)) {
+                                stock = Math.max(0, parsedStock);
+                            }
+                        }
                         let remark = column.remark !== -1 ? row[column.remark]?.toString().trim() || '' : '';
                         if (itemsMap.has(impa)) {
                             itemsMap.get(impa).quantity += qty;
@@ -3562,6 +3663,14 @@
         window.addEventListener('storage', async (event) => {
             if (event.key === META_KEY) {
                 // 密码已更改，要求重新认证
+                // 尝试保存当前工作区（可能因密钥失效而失败，但值得尝试）
+                if (currentApplication && currentApplication.reqNo) {
+                    try {
+                        await persistCurrentApplication(false);
+                    } catch (e) {
+                        console.warn('密码变更前保存失败', e);
+                    }
+                }
                 cryptoKey = null;
                 isAuthenticated = false;
                 const overlay = document.getElementById('authOverlay');
