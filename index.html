@@ -3,26 +3,17 @@
 <head>
     <!--
     =====================================================================
-    船舶物料申请系统 · 灵韵旗舰版 v12.8.0
-    更新说明 (v12.7 → v12.8)：
-    1. 修复数量输入无法设置为0的问题。
-    2. 修复init()中状态提示文本重复追加的问题。
-    3. 修复授权验证时覆盖未保存审计日志的问题（verifyPassword增加loadLogs参数）。
-    4. 修复历史申请单列表可能包含备份残留键的问题（过滤backup_键并清理残留）。
-    5. 修复修改密码备份前未清理旧备份键的问题。
-    6. 修复文件导入中prompt取消处理缺失的问题。
-    7. 主登录界面增加回车键提交支持。
-    8. 批量导入物料确认对话框改为明确数字选择（1=覆盖，2=合并）。
-    9. 优化UI状态存储，不再保存敏感的最后申请单号。
-    10. 为密码修改过程添加更详细的日志记录。
-    11. 删除重复函数定义，修复语法错误。
-    12. 外部库改为CDN加载，确保跨环境可用。
-    13. 保留原有所有功能、界面、设置，无任何降级或删除。
+    船舶物料申请系统 · 灵韵旗舰版 v12.9.0
+    更新说明 (v12.8 → v12.9)：
+    1. 增强修改密码回滚机制的容错性：恢复失败时记录并继续，避免部分回滚卡死。
+    2. 批量导入中英文库增加事务性回滚：若英文库保存失败，自动尝试回滚中文库，并提示。
+    3. 数据损坏检测后增加“重置系统”提示与功能，用户可在验证密码后清除所有数据并重新初始化。
+    4. 保留原有所有功能、界面、设置，无任何降级或删除。
     =====================================================================
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v12.8.0</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v12.9.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 动态加载 XLSX 和 localforage，自动重试备用 CDN -->
@@ -834,7 +825,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v12.8.0 · 安全增强</div>
+                <div class="version-corner">v12.9.0 · 安全增强</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -1236,18 +1227,21 @@
                 }, 500);
             }
 
-            // 元数据更新不应受数据损坏标志限制，因为元数据只记录数量，不覆盖实际数据分片
-            // 使用直接写入方式，绕过 secureSetItem 的损坏检查
-            try {
-                if (meta && result.length !== meta.total) {
-                    const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
-                    await secureStores[storeName].setItem('meta', encryptedMeta);
-                } else if (!meta && result.length > 0) {
-                    const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
-                    await secureStores[storeName].setItem('meta', encryptedMeta);
+            // 元数据更新仅在数据未损坏且密钥正确时进行，避免覆盖可能损坏的 meta
+            if (!dataCorruptionDetected) {
+                try {
+                    if (meta && result.length !== meta.total) {
+                        const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
+                        await secureStores[storeName].setItem('meta', encryptedMeta);
+                    } else if (!meta && result.length > 0) {
+                        const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
+                        await secureStores[storeName].setItem('meta', encryptedMeta);
+                    }
+                } catch (metaError) {
+                    console.warn(`更新 ${storeName} 元数据失败:`, metaError);
                 }
-            } catch (metaError) {
-                console.warn(`更新 ${storeName} 元数据失败:`, metaError);
+            } else {
+                console.warn(`检测到数据损坏，跳过 ${storeName} 元数据更新`);
             }
 
             const chunks = [];
@@ -1428,6 +1422,43 @@
             });
         }
 
+        // 重置系统（用于数据损坏时的恢复操作）
+        async function resetSystemAfterCorruption() {
+            try {
+                // 1. 使用 localforage.dropInstance 正确删除 IndexedDB 数据库
+                await localforage.dropInstance({ name: 'IMPA_SecureDB_v96' });
+                // 2. 清除 localStorage 相关键
+                const keysToRemove = [
+                    META_KEY,
+                    'impa_failed_attempts',
+                    'impa_login_lockout_until',
+                    'impa_audit_logs',
+                    'ui_activeTab',
+                    'ui_currentLang',
+                    'ui_reqSortField',
+                    'ui_reqSortAsc',
+                    'ui_reqDefaultOrder',
+                    'ui_reqSearchKeyword',
+                    'ui_reqSearchField',
+                    'ui_materialSearchKeyword',
+                    'ui_materialSearchField',
+                    'ui_materialPageSize',
+                    'ui_materialCurrentPage',
+                    'ui_quickSearchKeyword',
+                    'ui_quickSearchField',
+                    'reqColWidths',
+                    'materialColWidths'
+                ];
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                // 3. 重新加载页面，重新开始初始化
+                alert('系统已重置，请重新设置主密码。');
+                location.reload();
+            } catch (error) {
+                console.error('重置系统失败:', error);
+                alert('重置系统失败：' + error.message + '\n请手动清除浏览器数据后重试。');
+            }
+        }
+
         async function changePassword(oldPassword, newPassword, newPasswordConfirm) {
             if (newPassword !== newPasswordConfirm) throw new Error("两次新密码不一致");
             if (!await verifyPassword(oldPassword, false)) throw new Error("原密码错误");
@@ -1489,18 +1520,37 @@
                 const keys = await secureStores[storeName].keys();
                 const backupKeys = keys.filter(key => key.startsWith('backup_'));
                 const formalKeys = keys.filter(key => !key.startsWith('backup_'));
+                const errors = [];
                 for (const key of formalKeys) {
-                    await secureStores[storeName].removeItem(key);
-                }
-                for (const backupKey of backupKeys) {
-                    const encryptedValue = await secureStores[storeName].getItem(backupKey);
-                    if (encryptedValue !== null) {
-                        const originalKey = backupKey.substring(7);
-                        await secureStores[storeName].setItem(originalKey, encryptedValue);
+                    try {
+                        await secureStores[storeName].removeItem(key);
+                    } catch (err) {
+                        errors.push(`删除正式键 ${key} 失败: ${err.message}`);
+                        console.error(`恢复 ${storeName} 时删除正式键失败:`, err);
                     }
                 }
                 for (const backupKey of backupKeys) {
-                    await secureStores[storeName].removeItem(backupKey);
+                    try {
+                        const encryptedValue = await secureStores[storeName].getItem(backupKey);
+                        if (encryptedValue !== null) {
+                            const originalKey = backupKey.substring(7);
+                            await secureStores[storeName].setItem(originalKey, encryptedValue);
+                        }
+                    } catch (err) {
+                        errors.push(`恢复备份键 ${backupKey} 失败: ${err.message}`);
+                        console.error(`恢复 ${storeName} 时从备份恢复失败:`, err);
+                    }
+                }
+                for (const backupKey of backupKeys) {
+                    try {
+                        await secureStores[storeName].removeItem(backupKey);
+                    } catch (err) {
+                        errors.push(`清理备份键 ${backupKey} 失败: ${err.message}`);
+                        console.error(`恢复 ${storeName} 时清理备份键失败:`, err);
+                    }
+                }
+                if (errors.length > 0) {
+                    throw new Error(`${storeName} 恢复部分失败:\n${errors.join('\n')}`);
                 }
             };
 
@@ -1577,15 +1627,24 @@
                     const oldSalt = Uint8Array.from(atob(oldMetaObject.salt), character => character.charCodeAt(0));
                     cryptoKey = await deriveKeyFromPassword(oldPassword, oldSalt);
 
-                    await restoreStore('en');
-                    await restoreStore('zh');
-                    await restoreStore('app');
-                    await restoreStore('logs');
+                    const restoreErrors = [];
+                    for (const storeName of ['en', 'zh', 'app', 'logs']) {
+                        try {
+                            await restoreStore(storeName);
+                        } catch (restoreErr) {
+                            restoreErrors.push(restoreErr.message);
+                            console.error(`恢复 ${storeName} 失败:`, restoreErr);
+                        }
+                    }
 
                     if (progressModal.parentNode) progressModal.remove();
                     window.removeEventListener('beforeunload', beforeUnloadHandler);
 
-                    throw new Error('密码修改失败，数据已成功恢复，请重新尝试');
+                    if (restoreErrors.length > 0) {
+                        throw new Error(`密码修改失败，数据恢复过程中出现部分错误，请立即导出备份并检查数据完整性。\n${restoreErrors.join('\n')}`);
+                    } else {
+                        throw new Error('密码修改失败，数据已成功恢复，请重新尝试');
+                    }
                 }
             } catch (error) {
                 if (progressModal.parentNode) progressModal.remove();
@@ -2967,6 +3026,19 @@
                 initResizeHandlers('reqTable', true);
                 initResizeHandlers('materialSearchTable', false);
             }, 200);
+
+            // 数据损坏检测后的处理
+            if (dataCorruptionDetected) {
+                setTimeout(async () => {
+                    const userChoice = confirm('⚠️ 检测到数据损坏，系统已阻止保存操作。\n\n是否清除所有数据并重置系统？\n（此操作不可撤销，请先确保已备份可用的数据）\n\n点击【确定】进行重置，【取消】保持只读模式。');
+                    if (userChoice) {
+                        const authorized = await requirePasswordAuth('重置系统');
+                        if (authorized) {
+                            await resetSystemAfterCorruption();
+                        }
+                    }
+                }, 1000);
+            }
         }
 
         // ========== 绑定所有按钮事件 ==========
@@ -3211,9 +3283,38 @@
                         newEn = applyMaterials(materialDataEn, enMaterials, mode);
 
                         if (progressText) progressText.innerText = '保存中...';
-                        const zhSaved = await saveFullMaterialArray('zh', newZh);
-                        const enSaved = await saveFullMaterialArray('en', newEn);
-                        if (!zhSaved || !enSaved) {
+                        // 保存前记录原始数据，用于失败回滚
+                        const originalZh = materialDataZh.slice();
+                        const originalEn = materialDataEn.slice();
+                        let zhSaved = false;
+                        let enSaved = false;
+                        try {
+                            zhSaved = await saveFullMaterialArray('zh', newZh);
+                            if (!zhSaved) {
+                                throw new Error('中文库保存失败');
+                            }
+                            enSaved = await saveFullMaterialArray('en', newEn);
+                            if (!enSaved) {
+                                throw new Error('英文库保存失败');
+                            }
+                        } catch (saveError) {
+                            console.error('批量导入保存失败:', saveError);
+                            // 尝试回滚已保存的库
+                            if (zhSaved && !enSaved) {
+                                // 中文库已保存，英文库失败，尝试回滚中文库
+                                try {
+                                    const rollbackZh = await saveFullMaterialArray('zh', originalZh);
+                                    if (!rollbackZh) {
+                                        throw new Error('中文库回滚失败');
+                                    }
+                                    alert(`❌ 导入失败：${saveError.message}\n中文库已自动回滚。`);
+                                } catch (rollbackError) {
+                                    console.error('中文库回滚失败:', rollbackError);
+                                    alert(`❌ 导入失败：${saveError.message}\n中文库已保存，但自动回滚失败！请手动导出备份检查数据。`);
+                                }
+                            } else {
+                                alert(`❌ 导入失败：${saveError.message}`);
+                            }
                             throw new Error('物料库保存失败，导入未完成');
                         }
 
