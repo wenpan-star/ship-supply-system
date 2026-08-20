@@ -25,10 +25,81 @@
     <title>船舶物料申请系统 · 灵韵旗舰版 v12.8.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- 外部库改为CDN加载，避免本地路径问题 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js">
+    <!-- 动态加载 XLSX 和 localforage，自动重试备用 CDN -->
+    <script>
+    (function() {
+        var xlsxCDN = [
+            'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+            'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+            'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+        ];
+        var localforageCDN = [
+            'https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js',
+            'https://unpkg.com/localforage@1.10.0/dist/localforage.min.js'
+        ];
+        function loadScript(url) {
+            return new Promise(function(resolve, reject) {
+                var script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = function() { reject(new Error('加载失败: ' + url)); };
+                document.head.appendChild(script);
+            });
+        }
+        function tryLoadWithRetry(cdnList, libName) {
+            var index = 0;
+            function attempt() {
+                if (index >= cdnList.length) {
+                    return Promise.reject(new Error(libName + ' 所有 CDN 均加载失败'));
+                }
+                return loadScript(cdnList[index]).then(function() {
+                    console.log('✅ ' + libName + ' 加载成功: ' + cdnList[index]);
+                    return;
+                }).catch(function(err) {
+                    console.warn('⚠️ ' + libName + ' CDN 加载失败: ' + cdnList[index], err);
+                    index++;
+                    return attempt();
+                });
+            }
+            return attempt();
+        }
+        function checkAlreadyLoaded(libName, globalVar) {
+            if (typeof globalVar !== 'undefined') {
+                console.log('✅ ' + libName + ' 已存在，跳过加载');
+                return Promise.resolve();
+            }
+            return null;
+        }
+        var xlsxPromise = checkAlreadyLoaded('XLSX', window.XLSX) || tryLoadWithRetry(xlsxCDN, 'XLSX');
+        var localforagePromise = checkAlreadyLoaded('localforage', window.localforage) || tryLoadWithRetry(localforageCDN, 'localforage');
+        Promise.all([xlsxPromise, localforagePromise])
+            .then(function() {
+                console.log('🎉 所有依赖库加载完成');
+                window.dispatchEvent(new CustomEvent('libsLoaded'));
+            })
+            .catch(function(error) {
+                console.error('❌ 依赖库加载失败:', error.message);
+                function showError() {
+                    // 先尝试更新状态栏
+                    var statusEl = document.getElementById('autoSaveStatus');
+                    if (statusEl) {
+                        statusEl.innerText = '❌ ' + error.message + '，请刷新重试';
+                        statusEl.style.color = '#9e2a2b';
+                    }
+                    // 再在页面顶部添加显眼的红色提示条（非阻塞）
+                    var banner = document.createElement('div');
+                    banner.className = 'global-error-banner';
+                    banner.innerHTML = '⚠️ ' + error.message + '，请<a href="#" onclick="location.reload()" style="color:#fff;text-decoration:underline;">刷新页面</a>重试';
+                    document.body.prepend(banner);
+                }
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', showError);
+                } else {
+                    showError();
+                }
+            });
+    })();
     </script>
     <style>
         :root {
@@ -610,6 +681,26 @@
             background: #a0bcd0;
             border-radius: 10px;
         }
+        /* 全局错误提示条 */
+        .global-error-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #9e2a2b;
+            color: #fff;
+            text-align: center;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            z-index: 99999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            animation: slideDown 0.4s ease;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
         .inline-edit {
             cursor: pointer;
             border-bottom: none;
@@ -911,8 +1002,10 @@
         </div>
     </div>
     <script>
-        // ========== 安全与存储核心 (v12.7.0 增强版) ==========
-        let cryptoKey = null;
+        // ========== 将所有业务代码放入 runApp 函数 ==========
+        function runApp() {
+            // ========== 安全与存储核心 (v12.7.0 增强版) ==========
+            let cryptoKey = null;
         let isAuthenticated = false;
         let operationLogs = [];
         const META_KEY = 'impa_security_meta_v96';
@@ -3714,6 +3807,14 @@
 
         // ========== 启动认证流程 ==========
         startAuth();
+        } // 结束 runApp
+
+        // 如果两个库都已就绪（可能因为缓存直接加载），立即运行；否则等待事件
+        if (typeof XLSX !== 'undefined' && typeof localforage !== 'undefined') {
+            runApp();
+        } else {
+            window.addEventListener('libsLoaded', runApp);
+        }
     </script>
 </body>
 </html>
