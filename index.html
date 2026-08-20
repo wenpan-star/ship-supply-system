@@ -3,8 +3,8 @@
 <head>
     <!--
     =====================================================================
-    船舶物料申请系统 · 灵韵旗舰版 v12.7.0
-    更新说明 (v12.6 → v12.7)：
+    船舶物料申请系统 · 灵韵旗舰版 v12.8.0
+    更新说明 (v12.7 → v12.8)：
     1. 修复数量输入无法设置为0的问题。
     2. 修复init()中状态提示文本重复追加的问题。
     3. 修复授权验证时覆盖未保存审计日志的问题（verifyPassword增加loadLogs参数）。
@@ -22,11 +22,11 @@
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v12.7.0</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v12.8.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 外部库改为CDN加载，避免本地路径问题 -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.20.3/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js">
     </script>
@@ -743,7 +743,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v12.7.0 · 安全增强</div>
+                <div class="version-corner">v12.8.0 · 安全增强</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
