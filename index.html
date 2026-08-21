@@ -3,20 +3,18 @@
 <head>
     <!--
     =====================================================================
-    船舶物料申请系统 · 灵韵旗舰版 v13.3.0
-    更新说明 (v12.9 → v13.3)：
-    1. 导出备份增强：支持 JSON（加密）和 Excel（明文）两种格式选择，并可按物料来源筛选导出。
-    2. 新增物料来源标记：快速添加、批量追加、标准导入分别记录来源，支持精确导出。
-    3. 修复 dataCorruptionDetected 不可逆问题：新增清除损坏标志功能，用户可在验证数据完整性后恢复写操作。
-    4. 增强密码修改回滚的原子性：完善备份/恢复机制，降低数据不一致风险。
-    5. 修复 loadChunkedData 元数据更新逻辑：仅在数据完整（无解密失败）时更新 meta，避免错误覆盖。
-    6. 增强 requirePasswordAuth 健壮性：确保异常情况下 authModalOpen 标志正确复位，防止授权操作永久阻塞。
-    7. 保留原有所有功能、界面、设置，无任何降级或删除。
+    船舶物料申请系统 · 灵韵旗舰版 v13.4.0
+    更新说明 (v13.3 → v13.4)：
+    1. 修复物料来源筛选失效：区分“导入物料库”与“批量追加物料”按钮来源标记。
+       - 导入物料库 → source = 'import'
+       - 批量追加物料 → source = 'batch'
+    2. 优化导出备份 Excel 工作表命名：物料库工作表由“物料库_CN/EN”改为简洁的“CN/EN”。
+    3. 保留原有所有功能、界面、设置，无任何降级或删除。
     =====================================================================
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v13.3.0</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v13.4.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 动态加载 XLSX 和 localforage，自动重试备用 CDN -->
@@ -828,7 +826,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v13.3.0 · 稳定版</div>
+                <div class="version-corner">v13.4.0 · 稳定版</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -998,7 +996,7 @@
     <script>
         // ========== 将所有业务代码放入 runApp 函数 ==========
         function runApp() {
-            // ========== 安全与存储核心 (v13.3.0 增强版) ==========
+            // ========== 安全与存储核心 (v13.4.0 增强版) ==========
             let cryptoKey = null;
         let isAuthenticated = false;
         let operationLogs = [];
@@ -1082,7 +1080,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v13.3.0 稳定版");
+            addLog("系统初始化", "v13.4.0 稳定版");
             return true;
         }
 
@@ -3120,8 +3118,8 @@
             initTabSwitching();
             reloadMaterialBtn.onclick = reloadMaterialLibrary;
             // 导入按钮统一绑定到 batchAddMaterialsFromExcel
-            importLibraryBtn.onclick = batchAddMaterialsFromExcel;
-            batchAddMaterialBtn.onclick = batchAddMaterialsFromExcel; // 保留批量追加区域按钮
+            importLibraryBtn.onclick = () => batchAddMaterialsFromExcel('import');
+            batchAddMaterialBtn.onclick = () => batchAddMaterialsFromExcel('batch'); // 保留批量追加区域按钮
             exportBackupBtn.onclick = showExportBackupModal;
             importBackupBtn.onclick = importBackupJSON;
             exportExcelBtn.onclick = exportToExcel;
@@ -3236,7 +3234,8 @@
         }
 
         // ========== 批量导入物料（Excel） ==========
-        async function batchAddMaterialsFromExcel() {
+        async function batchAddMaterialsFromExcel(sourceType = 'batch') {
+            // sourceType: 'import' 表示标准导入（通过“导入物料库”按钮），'batch' 表示批量追加
             if (!await requirePasswordAuth("批量导入物料（支持中英文表）")) return;
             const input = document.createElement('input');
             input.type = 'file';
@@ -3279,7 +3278,7 @@
                         else { alert("无效选择，操作取消"); return; }
                     }
 
-                    const parseMaterialSheet = (worksheet, sheetName, progressStart, progressEnd) => {
+                    const parseMaterialSheet = (worksheet, sheetName, progressStart, progressEnd, sourceType) => {
                         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
                         if (rows.length < 2) return [];
 
@@ -3314,7 +3313,7 @@
                                 specification: (colIdx.spec !== -1 && row[colIdx.spec]) ? String(row[colIdx.spec]).trim().slice(0, 100) : '',
                                 unit: (colIdx.unit !== -1 && row[colIdx.unit]) ? String(row[colIdx.unit]).trim().slice(0, 20) : '',
                                 remark: (colIdx.remark !== -1 && row[colIdx.remark]) ? String(row[colIdx.remark]).trim().slice(0, 200) : '',
-                                source: 'batch'
+                                source: sourceType
                             });
                             if (progressText && progressFill && i % 100 === 0) {
                                 const pct = progressStart + Math.round((i / rows.length) * (progressEnd - progressStart));
@@ -3344,9 +3343,9 @@
                     let newZh, newEn;
                     if (hasCn && hasEn) {
                         if (progressText) progressText.innerText = '解析 CN 表...';
-                        const cnMaterials = parseMaterialSheet(workbook.Sheets["CN"], "CN", 10, 50);
+                        const cnMaterials = parseMaterialSheet(workbook.Sheets["CN"], "CN", 10, 50, sourceType);
                         if (progressText) progressText.innerText = '解析 EN 表...';
-                        const enMaterials = parseMaterialSheet(workbook.Sheets["EN"], "EN", 50, 90);
+                        const enMaterials = parseMaterialSheet(workbook.Sheets["EN"], "EN", 50, 90, sourceType);
 
                         if (!cnMaterials.length && !enMaterials.length) {
                             if (progressArea) progressArea.style.display = 'none';
@@ -3434,7 +3433,7 @@
                                 specification: (idx.spec !== -1 && row[idx.spec]) ? String(row[idx.spec]).trim().slice(0, 100) : '',
                                 unit: (idx.unit !== -1 && row[idx.unit]) ? String(row[idx.unit]).trim().slice(0, 20) : '',
                                 remark: (idx.remark !== -1 && row[idx.remark]) ? String(row[idx.remark]).trim().slice(0, 200) : '',
-                                source: 'batch'
+                                source: sourceType
                             });
                             if (progressText && progressFill && i % 100 === 0) {
                                 const pct = 10 + Math.round((i / rows.length) * 80);
@@ -3803,7 +3802,7 @@
                     });
                     const wsZh = XLSX.utils.aoa_to_sheet(zhRows);
                     wsZh['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 20 }];
-                    XLSX.utils.book_append_sheet(wb, wsZh, '物料库_CN');
+                    XLSX.utils.book_append_sheet(wb, wsZh, 'CN');
 
                     // 英文物料库
                     const enRows = [['IMPA', 'Description', 'Specification', 'Unit', 'Remark']];
@@ -3818,7 +3817,7 @@
                     });
                     const wsEn = XLSX.utils.aoa_to_sheet(enRows);
                     wsEn['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 20 }];
-                    XLSX.utils.book_append_sheet(wb, wsEn, '物料库_EN');
+                    XLSX.utils.book_append_sheet(wb, wsEn, 'EN');
                 }
 
                 if (includeApplications) {
