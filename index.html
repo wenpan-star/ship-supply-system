@@ -3,17 +3,20 @@
 <head>
     <!--
     =====================================================================
-    船舶物料申请系统 · 灵韵旗舰版 v12.9.0
-    更新说明 (v12.8 → v12.9)：
-    1. 增强修改密码回滚机制的容错性：恢复失败时记录并继续，避免部分回滚卡死。
-    2. 批量导入中英文库增加事务性回滚：若英文库保存失败，自动尝试回滚中文库，并提示。
-    3. 数据损坏检测后增加“重置系统”提示与功能，用户可在验证密码后清除所有数据并重新初始化。
-    4. 保留原有所有功能、界面、设置，无任何降级或删除。
+    船舶物料申请系统 · 灵韵旗舰版 v13.3.0
+    更新说明 (v12.9 → v13.3)：
+    1. 导出备份增强：支持 JSON（加密）和 Excel（明文）两种格式选择，并可按物料来源筛选导出。
+    2. 新增物料来源标记：快速添加、批量追加、标准导入分别记录来源，支持精确导出。
+    3. 修复 dataCorruptionDetected 不可逆问题：新增清除损坏标志功能，用户可在验证数据完整性后恢复写操作。
+    4. 增强密码修改回滚的原子性：完善备份/恢复机制，降低数据不一致风险。
+    5. 修复 loadChunkedData 元数据更新逻辑：仅在数据完整（无解密失败）时更新 meta，避免错误覆盖。
+    6. 增强 requirePasswordAuth 健壮性：确保异常情况下 authModalOpen 标志正确复位，防止授权操作永久阻塞。
+    7. 保留原有所有功能、界面、设置，无任何降级或删除。
     =====================================================================
     -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>船舶物料申请系统 · 灵韵旗舰版 v12.9.0</title>
+    <title>船舶物料申请系统 · 灵韵旗舰版 v13.3.0</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%231a4d8c' stroke='%23f0c674' stroke-width='2'/%3E%3Cpath fill='%23f0c674' d='M50,12 L53,28 L68,20 L62,35 L78,35 L68,47 L78,60 L62,60 L68,75 L53,67 L50,83 L47,67 L32,75 L38,60 L22,60 L32,47 L22,35 L38,35 L32,20 L47,28 Z'/%3E%3Ccircle cx='50' cy='47' r='8' fill='%23ffffff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- 动态加载 XLSX 和 localforage，自动重试备用 CDN -->
@@ -825,7 +828,7 @@
                 <button id="changePasswordBtn" class="outline"><i class="fas fa-key"></i> 修改密码</button>
                 <button id="showAuditLogBtn" class="outline"><i class="fas fa-history"></i> 审计日志</button>
                 <button id="toggleLangBtn" class="outline lang-toggle-btn"><i class="fas fa-globe"></i> <span id="langText">中</span></button>
-                <div class="version-corner">v12.9.0 · 安全增强</div>
+                <div class="version-corner">v13.3.0 · 稳定版</div>
             </div>
         </div>
         <div id="reqTab" class="tab-pane active-pane">
@@ -926,7 +929,7 @@
                     <div class="btn-icon-group">
                         <button id="reloadMaterialBtn" class="outline" title="从加密存储中重新加载物料库"><i class="fas fa-sync-alt"></i> 刷新库</button>
                         <button id="importLibraryBtn" class="primary"><i class="fas fa-file-import"></i> 导入物料库</button>
-                        <button id="exportBackupBtn" class="success"><i class="fas fa-cloud-download-alt"></i> 导出备份(JSON)</button>
+                        <button id="exportBackupBtn" class="success"><i class="fas fa-cloud-download-alt"></i> 导出备份</button>
                         <button id="importBackupBtn" class="outline"><i class="fas fa-cloud-upload-alt"></i> 导入备份(JSON)</button>
                         <button id="clearLibraryBtn" class="danger-btn warning-btn"><i class="fas fa-trash-alt"></i> 清空全部库</button>
                     </div>
@@ -995,7 +998,7 @@
     <script>
         // ========== 将所有业务代码放入 runApp 函数 ==========
         function runApp() {
-            // ========== 安全与存储核心 (v12.7.0 增强版) ==========
+            // ========== 安全与存储核心 (v13.3.0 增强版) ==========
             let cryptoKey = null;
         let isAuthenticated = false;
         let operationLogs = [];
@@ -1079,7 +1082,7 @@
             for (let store of ['en', 'zh']) {
                 await saveChunkedData(store, []);
             }
-            addLog("系统初始化", "v12.7.0 增强版");
+            addLog("系统初始化", "v13.3.0 稳定版");
             return true;
         }
 
@@ -1227,21 +1230,29 @@
                 }, 500);
             }
 
-            // 元数据更新仅在数据未损坏且密钥正确时进行，避免覆盖可能损坏的 meta
-            if (!dataCorruptionDetected) {
+            // 元数据更新：仅在数据完整（无解密失败）且密钥正确时进行，避免覆盖可能损坏的 meta
+            // 如果 decryptFailCount > 0，说明有分片解密失败，不应更新 meta，否则可能记录错误的总数
+            if (!dataCorruptionDetected && decryptFailCount === 0) {
                 try {
+                    // 只有在所有分片均成功加载且 meta 与 result.length 不一致时才更新
                     if (meta && result.length !== meta.total) {
                         const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
                         await secureStores[storeName].setItem('meta', encryptedMeta);
+                        console.log(`${storeName} 元数据已更新：${meta.total} → ${result.length}`);
                     } else if (!meta && result.length > 0) {
                         const encryptedMeta = await encryptData(JSON.stringify({ chunkCount: chunkKeys.length, total: result.length }));
                         await secureStores[storeName].setItem('meta', encryptedMeta);
+                        console.log(`${storeName} 元数据已创建：${result.length} 条`);
                     }
                 } catch (metaError) {
                     console.warn(`更新 ${storeName} 元数据失败:`, metaError);
                 }
             } else {
-                console.warn(`检测到数据损坏，跳过 ${storeName} 元数据更新`);
+                if (decryptFailCount > 0) {
+                    console.warn(`检测到 ${storeName} 有 ${decryptFailCount} 个分片解密失败，跳过元数据更新以避免覆盖正确元数据`);
+                } else {
+                    console.warn(`检测到数据损坏，跳过 ${storeName} 元数据更新`);
+                }
             }
 
             const chunks = [];
@@ -1369,8 +1380,16 @@
                 const errorDiv = card.querySelector('#pwdModalError');
                 input.focus();
                 const cleanUp = () => {
-                    if (modal.parentNode) modal.remove();
-                    authModalOpen = false;
+                    try {
+                        if (modal && modal.parentNode) {
+                            modal.remove();
+                        }
+                    } catch (cleanupError) {
+                        console.warn('清理授权模态框失败:', cleanupError);
+                    } finally {
+                        // 无论清理是否成功，都必须复位 authModalOpen 标志，避免后续授权操作被永久阻止
+                        authModalOpen = false;
+                    }
                 };
                 const checkPassword = async () => {
                     if (Date.now() < loginLockoutUntil) {
@@ -1521,6 +1540,29 @@
                 const backupKeys = keys.filter(key => key.startsWith('backup_'));
                 const formalKeys = keys.filter(key => !key.startsWith('backup_'));
                 const errors = [];
+
+                // 增强：先验证备份键的完整性，确保所有备份键都能读取到数据
+                // 如果备份键读取失败，说明备份本身可能已损坏，不应继续删除正式键
+                const backupKeyValues = new Map();
+                for (const backupKey of backupKeys) {
+                    try {
+                        const encryptedValue = await secureStores[storeName].getItem(backupKey);
+                        if (encryptedValue === null || encryptedValue === undefined) {
+                            throw new Error(`备份键 ${backupKey} 没有数据`);
+                        }
+                        backupKeyValues.set(backupKey, encryptedValue);
+                    } catch (err) {
+                        errors.push(`读取备份键 ${backupKey} 失败: ${err.message}`);
+                        console.error(`恢复 ${storeName} 时读取备份键失败:`, err);
+                    }
+                }
+
+                // 如果备份键读取有错误，不再继续删除正式键
+                if (errors.length > 0) {
+                    throw new Error(`${storeName} 备份数据不完整，恢复中止:\n${errors.join('\n')}`);
+                }
+
+                // 备份数据完整，开始删除正式键
                 for (const key of formalKeys) {
                     try {
                         await secureStores[storeName].removeItem(key);
@@ -1529,18 +1571,19 @@
                         console.error(`恢复 ${storeName} 时删除正式键失败:`, err);
                     }
                 }
-                for (const backupKey of backupKeys) {
+
+                // 从备份恢复
+                for (const [backupKey, encryptedValue] of backupKeyValues.entries()) {
                     try {
-                        const encryptedValue = await secureStores[storeName].getItem(backupKey);
-                        if (encryptedValue !== null) {
-                            const originalKey = backupKey.substring(7);
-                            await secureStores[storeName].setItem(originalKey, encryptedValue);
-                        }
+                        const originalKey = backupKey.substring(7);
+                        await secureStores[storeName].setItem(originalKey, encryptedValue);
                     } catch (err) {
                         errors.push(`恢复备份键 ${backupKey} 失败: ${err.message}`);
                         console.error(`恢复 ${storeName} 时从备份恢复失败:`, err);
                     }
                 }
+
+                // 清理备份键
                 for (const backupKey of backupKeys) {
                     try {
                         await secureStores[storeName].removeItem(backupKey);
@@ -1549,6 +1592,7 @@
                         console.error(`恢复 ${storeName} 时清理备份键失败:`, err);
                     }
                 }
+
                 if (errors.length > 0) {
                     throw new Error(`${storeName} 恢复部分失败:\n${errors.join('\n')}`);
                 }
@@ -1769,6 +1813,23 @@
         }
 
         /**
+         * 为物料数据补充默认来源标记
+         * 旧版本数据没有 source 字段，统一标记为 'import'（标准导入）
+         * 来源标记取值：'import'（标准导入）、'custom'（快速添加）、'batch'（批量追加）
+         */
+        function normalizeMaterialSources() {
+            const addDefaultSource = (array) => {
+                array.forEach(item => {
+                    if (!item.source) {
+                        item.source = 'import';
+                    }
+                });
+            };
+            addDefaultSource(materialDataEn);
+            addDefaultSource(materialDataZh);
+        }
+
+        /**
          * 统一错误处理辅助函数
          * 用于在持久化操作失败时向用户显示明确的错误提示
          * @param {string} operationName - 操作名称（如“保存物料库”、“保存申请单”等）
@@ -1844,6 +1905,7 @@
                 let { en, zh } = await loadAllSecureData();
                 materialDataEn = ensureRemarkField(en);
                 materialDataZh = ensureRemarkField(zh);
+                normalizeMaterialSources();
                 performMaterialSearch();
                 updateLibraryCountDisplay();
                 alert(`物料库已刷新：英文 ${materialDataEn.length} 条，中文 ${materialDataZh.length} 条`);
@@ -2988,6 +3050,8 @@
             let { en, zh } = await loadAllSecureData();
             materialDataEn = ensureRemarkField(en);
             materialDataZh = ensureRemarkField(zh);
+            // 为旧数据补充默认来源标记，确保后续来源筛选功能正常工作
+            normalizeMaterialSources();
             // 修复：状态提示文本只设置一次，不重复追加
             if (autoSaveSpan) {
                 autoSaveSpan.innerHTML = '<i class="fas fa-shield-alt"></i> 安全加密 · 实时保存已就绪 · IndexedDB 存储 ✅';
@@ -3030,11 +3094,21 @@
             // 数据损坏检测后的处理
             if (dataCorruptionDetected) {
                 setTimeout(async () => {
-                    const userChoice = confirm('⚠️ 检测到数据损坏，系统已阻止保存操作。\n\n是否清除所有数据并重置系统？\n（此操作不可撤销，请先确保已备份可用的数据）\n\n点击【确定】进行重置，【取消】保持只读模式。');
+                    const userChoice = confirm('⚠️ 检测到数据损坏，系统已阻止保存操作。\n\n请选择处理方式：\n\n点击【确定】清除所有数据并重置系统（不可撤销）\n点击【取消】标记数据为正常并恢复保存（请确保您已确认数据完整性）');
                     if (userChoice) {
                         const authorized = await requirePasswordAuth('重置系统');
                         if (authorized) {
                             await resetSystemAfterCorruption();
+                        }
+                    } else {
+                        // 用户选择标记为正常，需要二次授权
+                        const authorized = await requirePasswordAuth('标记数据为正常');
+                        if (authorized) {
+                            dataCorruptionDetected = false;
+                            autoSaveSpan.innerText = '✅ 数据损坏标志已清除，保存功能已恢复';
+                            alert('已标记数据为正常，保存功能恢复。\n\n请注意：如果数据实际已损坏，可能导致进一步的数据问题。建议尽快导出备份并验证。');
+                            addLog('清除数据损坏标志', '用户确认数据完整性后恢复写操作');
+                            setTimeout(() => { autoSaveSpan.innerText = '安全加密 · 实时保存已就绪 · IndexedDB 存储 ✅'; }, 3000);
                         }
                     }
                 }, 1000);
@@ -3048,7 +3122,7 @@
             // 导入按钮统一绑定到 batchAddMaterialsFromExcel
             importLibraryBtn.onclick = batchAddMaterialsFromExcel;
             batchAddMaterialBtn.onclick = batchAddMaterialsFromExcel; // 保留批量追加区域按钮
-            exportBackupBtn.onclick = exportBackupJSON;
+            exportBackupBtn.onclick = showExportBackupModal;
             importBackupBtn.onclick = importBackupJSON;
             exportExcelBtn.onclick = exportToExcel;
             loadReqBtn.onclick = async () => {
@@ -3139,7 +3213,8 @@
                 description: desc,
                 specification: newSpec.value.trim().slice(0, 100),
                 unit: newUnit.value.trim().slice(0, 20),
-                remark: newRemark.value.trim().slice(0, 200)
+                remark: newRemark.value.trim().slice(0, 200),
+                source: 'custom'
             };
             let arr = getCurrentMaterialArray();
             // 使用副本进行保存，避免直接修改全局数组导致失败时状态不一致
@@ -3238,7 +3313,8 @@
                                 description: (colIdx.desc !== -1 && row[colIdx.desc]) ? String(row[colIdx.desc]).trim().slice(0, 200) : `IMPA ${impa}`,
                                 specification: (colIdx.spec !== -1 && row[colIdx.spec]) ? String(row[colIdx.spec]).trim().slice(0, 100) : '',
                                 unit: (colIdx.unit !== -1 && row[colIdx.unit]) ? String(row[colIdx.unit]).trim().slice(0, 20) : '',
-                                remark: (colIdx.remark !== -1 && row[colIdx.remark]) ? String(row[colIdx.remark]).trim().slice(0, 200) : ''
+                                remark: (colIdx.remark !== -1 && row[colIdx.remark]) ? String(row[colIdx.remark]).trim().slice(0, 200) : '',
+                                source: 'batch'
                             });
                             if (progressText && progressFill && i % 100 === 0) {
                                 const pct = progressStart + Math.round((i / rows.length) * (progressEnd - progressStart));
@@ -3357,7 +3433,8 @@
                                 description: (idx.desc !== -1 && row[idx.desc]) ? String(row[idx.desc]).trim().slice(0, 200) : `IMPA ${impa}`,
                                 specification: (idx.spec !== -1 && row[idx.spec]) ? String(row[idx.spec]).trim().slice(0, 100) : '',
                                 unit: (idx.unit !== -1 && row[idx.unit]) ? String(row[idx.unit]).trim().slice(0, 20) : '',
-                                remark: (idx.remark !== -1 && row[idx.remark]) ? String(row[idx.remark]).trim().slice(0, 200) : ''
+                                remark: (idx.remark !== -1 && row[idx.remark]) ? String(row[idx.remark]).trim().slice(0, 200) : '',
+                                source: 'batch'
                             });
                             if (progressText && progressFill && i % 100 === 0) {
                                 const pct = 10 + Math.round((i / rows.length) * 80);
@@ -3550,14 +3627,16 @@
                     description: item.description,
                     specification: item.specification || '',
                     unit: item.unit || '',
-                    remark: item.remark || ''
+                    remark: item.remark || '',
+                    source: item.source || 'import'
                 })),
                 zh: materialDataZh.map(item => ({
                     impa: item.impa,
                     description: item.description,
                     specification: item.specification || '',
                     unit: item.unit || '',
-                    remark: item.remark || ''
+                    remark: item.remark || '',
+                    source: item.source || 'import'
                 })),
                 apps: applicationsForBackup
             };
@@ -3587,6 +3666,202 @@
             URL.revokeObjectURL(url);
             addLog("导出JSON备份(加密)", `中英文库，EN:${exportData.en.length}条, ZH:${exportData.zh.length}条, 申请单:${Object.keys(exportData.apps).length}个`);
             alert(`✅ 加密备份导出成功！\n英文库 ${exportData.en.length} 条，中文库 ${exportData.zh.length} 条，申请单 ${Object.keys(exportData.apps).length} 个\n备份文件已加密，导入时需要主密码解密。`);
+        }
+
+        // ========== 导出备份模态框（格式选择 + 来源筛选） ==========
+        function showExportBackupModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+                display: flex; align-items: center; justify-content: center;
+                z-index: 25000; font-family: var(--font-stack);
+            `;
+            modal.innerHTML = `
+                <div style="background:#fff; border-radius:28px; padding:2rem;
+                    width:90%; max-width:450px; box-shadow:0 20px 40px rgba(0,0,0,0.3);
+                    text-align:center;">
+                    <i class="fas fa-download" style="font-size:2rem; color:#1f6893;"></i>
+                    <h3 style="margin:0.5rem 0;">导出备份</h3>
+                    <p style="color:#555; margin-bottom:1rem;">请选择备份格式和内容</p>
+                    <div style="text-align:left; margin-bottom:1rem;">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">备份格式</label>
+                        <div style="margin-bottom:6px;">
+                            <label><input type="radio" name="backupFormat" value="json" checked> JSON（加密，含全部数据）</label>
+                        </div>
+                        <div>
+                            <label><input type="radio" name="backupFormat" value="excel"> Excel（明文）</label>
+                        </div>
+                    </div>
+                    <div id="excelOptions" style="text-align:left; margin-bottom:1rem; display:none;">
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">导出内容</label>
+                        <div style="margin-bottom:6px;">
+                            <label><input type="checkbox" id="includeMaterials" checked> 物料库（中英文）</label>
+                        </div>
+                        <div style="margin-bottom:12px;">
+                            <label><input type="checkbox" id="includeApplications" checked> 申请单汇总</label>
+                        </div>
+                        <label style="display:block; font-weight:600; margin-bottom:6px;">物料来源筛选</label>
+                        <select id="materialSourceFilter" style="width:100%; padding:8px; border-radius:40px; border:1px solid #ccc;">
+                            <option value="all">全部物料</option>
+                            <option value="custom_batch" selected>仅自定义添加 + 批量追加</option>
+                            <option value="custom">仅快速添加</option>
+                            <option value="batch">仅批量追加</option>
+                            <option value="import">仅标准导入</option>
+                        </select>
+                    </div>
+                    <div id="exportBackupError" style="color:#9e2a2b; margin-bottom:0.8rem; font-size:0.85rem;"></div>
+                    <div style="display:flex; gap:12px; justify-content:center;">
+                        <button id="exportBackupCancel" style="padding:10px 20px; border-radius:40px; border:1px solid #ccc; background:#fff; cursor:pointer;">取消</button>
+                        <button id="exportBackupConfirm" style="padding:10px 20px; border-radius:40px; background:#1f6893; color:#fff; border:none; cursor:pointer;">导出</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const formatRadios = modal.querySelectorAll('input[name="backupFormat"]');
+            const excelOptionsDiv = modal.querySelector('#excelOptions');
+            const errorDiv = modal.querySelector('#exportBackupError');
+            const cancelBtn = modal.querySelector('#exportBackupCancel');
+            const confirmBtn = modal.querySelector('#exportBackupConfirm');
+
+            // 切换格式显示/隐藏 Excel 选项
+            formatRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'excel') {
+                        excelOptionsDiv.style.display = 'block';
+                    } else {
+                        excelOptionsDiv.style.display = 'none';
+                    }
+                });
+            });
+
+            cancelBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+
+            confirmBtn.addEventListener('click', async () => {
+                const format = modal.querySelector('input[name="backupFormat"]:checked').value;
+                if (format === 'json') {
+                    modal.remove();
+                    await exportBackupJSON();
+                } else {
+                    const includeMaterials = modal.querySelector('#includeMaterials').checked;
+                    const includeApplications = modal.querySelector('#includeApplications').checked;
+                    const materialSourceFilter = modal.querySelector('#materialSourceFilter').value;
+                    if (!includeMaterials && !includeApplications) {
+                        errorDiv.innerText = '请至少选择一项导出内容';
+                        return;
+                    }
+                    modal.remove();
+                    await exportBackupExcel(includeMaterials, includeApplications, materialSourceFilter);
+                }
+            });
+        }
+
+        // ========== 导出 Excel 明文备份 ==========
+        async function exportBackupExcel(includeMaterials, includeApplications, materialSourceFilter) {
+            try {
+                autoSaveSpan.innerText = '⏳ 正在导出 Excel 备份，请稍候...';
+                // 让状态栏先更新
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                const wb = XLSX.utils.book_new();
+
+                if (includeMaterials) {
+                    // 根据来源过滤物料数据
+                    const filterMaterials = (array) => {
+                        switch (materialSourceFilter) {
+                            case 'all':
+                                return array;
+                            case 'custom_batch':
+                                return array.filter(m => m.source === 'custom' || m.source === 'batch');
+                            case 'custom':
+                                return array.filter(m => m.source === 'custom');
+                            case 'batch':
+                                return array.filter(m => m.source === 'batch');
+                            case 'import':
+                                return array.filter(m => m.source === 'import');
+                            default:
+                                return array;
+                        }
+                    };
+
+                    const zhFiltered = filterMaterials(materialDataZh);
+                    const enFiltered = filterMaterials(materialDataEn);
+
+                    // 中文物料库
+                    const zhRows = [['IMPA', '物料描述', '规格型号', '单位', '备注']];
+                    zhFiltered.forEach(item => {
+                        zhRows.push([
+                            sanitizeExcelCell(item.impa),
+                            sanitizeExcelCell(item.description),
+                            sanitizeExcelCell(item.specification || ''),
+                            sanitizeExcelCell(item.unit || ''),
+                            sanitizeExcelCell(item.remark || '')
+                        ]);
+                    });
+                    const wsZh = XLSX.utils.aoa_to_sheet(zhRows);
+                    wsZh['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 20 }];
+                    XLSX.utils.book_append_sheet(wb, wsZh, '物料库_CN');
+
+                    // 英文物料库
+                    const enRows = [['IMPA', 'Description', 'Specification', 'Unit', 'Remark']];
+                    enFiltered.forEach(item => {
+                        enRows.push([
+                            sanitizeExcelCell(item.impa),
+                            sanitizeExcelCell(item.description),
+                            sanitizeExcelCell(item.specification || ''),
+                            sanitizeExcelCell(item.unit || ''),
+                            sanitizeExcelCell(item.remark || '')
+                        ]);
+                    });
+                    const wsEn = XLSX.utils.aoa_to_sheet(enRows);
+                    wsEn['!cols'] = [{ wch: 14 }, { wch: 34 }, { wch: 20 }, { wch: 8 }, { wch: 20 }];
+                    XLSX.utils.book_append_sheet(wb, wsEn, '物料库_EN');
+                }
+
+                if (includeApplications) {
+                    const appKeys = await secureStores.app.keys();
+                    const validKeys = appKeys.filter(key => !key.startsWith('chunk_') && key !== 'meta' && !key.startsWith('backup_'));
+                    const appRows = [['申请单号', '申请人', '申请时间', '物料条数', '备注']];
+                    for (const key of validKeys) {
+                        try {
+                            const app = await secureGetItem('app', key, null);
+                            if (app) {
+                                appRows.push([
+                                    sanitizeExcelCell(app.reqNo || key),
+                                    sanitizeExcelCell(app.applicant || ''),
+                                    sanitizeExcelCell(app.applyTime || ''),
+                                    app.items ? app.items.length : 0,
+                                    sanitizeExcelCell(app.remark || '')
+                                ]);
+                            }
+                        } catch (err) {
+                            // 单个申请单读取失败不应中断整个导出
+                            console.warn('读取申请单失败:', key, err);
+                        }
+                    }
+                    const wsApp = XLSX.utils.aoa_to_sheet(appRows);
+                    wsApp['!cols'] = [{ wch: 20 }, { wch: 12 }, { wch: 18 }, { wch: 10 }, { wch: 20 }];
+                    XLSX.utils.book_append_sheet(wb, wsApp, '申请单汇总');
+                }
+
+                if (wb.SheetNames.length === 0) {
+                    throw new Error('没有选择要导出的内容');
+                }
+
+                const filename = `船舶物料备份_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                autoSaveSpan.innerText = '✅ Excel 备份导出成功';
+                addLog('导出Excel备份', `物料库:${includeMaterials}, 来源:${materialSourceFilter}, 申请单:${includeApplications}`);
+                setTimeout(() => { autoSaveSpan.innerText = '安全加密 · 实时保存已就绪 · IndexedDB 存储 ✅'; }, 3000);
+            } catch (err) {
+                console.error('导出Excel备份失败:', err);
+                autoSaveSpan.innerText = '❌ 导出 Excel 备份失败';
+                setTimeout(() => { autoSaveSpan.innerText = '安全加密 · 实时保存已就绪 · IndexedDB 存储 ✅'; }, 3000);
+                alert('导出 Excel 备份失败：' + err.message);
+            }
         }
 
         // ========== JSON 备份导入（兼容旧格式，支持申请单恢复） ==========
@@ -3645,7 +3920,8 @@
                         description: String(item.description || '').trim().slice(0, 200),
                         specification: String(item.specification || '').trim().slice(0, 100),
                         unit: String(item.unit || '').trim().slice(0, 20),
-                        remark: String(item.remark || '').trim().slice(0, 200)
+                        remark: String(item.remark || '').trim().slice(0, 200),
+                        source: item.source || 'import'
                     })).filter(item => item.impa);
 
                     const importEn = processImported(enData);
