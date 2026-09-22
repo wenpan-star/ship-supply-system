@@ -1,0 +1,292 @@
+/* filename: styles/tables.css */
+/* ========================================================================
+   船舶物料申请系统 · 表格样式
+   包含：申请单表格、物料库表格、快速搜索结果、批量操作区、分页
+   ======================================================================== */
+
+.material-table-wrapper,
+.table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius);
+    max-height: 580px;
+    overflow-y: auto;
+    border: 1px solid #cbd6e3;
+    background: #fff;
+    scroll-behavior: smooth;
+}
+
+.req-table,
+.material-search-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.78rem;
+    min-width: 860px;
+}
+
+.req-table th,
+.req-table td,
+.material-search-table th,
+.material-search-table td {
+    padding: 10px 7px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    text-align: left;
+    background: #fff;
+}
+
+.req-table tr:hover td,
+.material-search-table tr:hover td {
+    background: #f2f6fa;
+}
+
+.req-table th,
+.material-search-table th {
+    background: #edf2f7;
+    font-weight: 700;
+    color: #0b1e2f;
+    position: sticky;
+    top: 0;
+    border-bottom: 2px solid #cbd6e3;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    z-index: 3;
+}
+
+.sort-indicator {
+    margin-left: 4px;
+    font-size: 0.6rem;
+    opacity: 0.8;
+}
+
+.resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 7px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    border-radius: 0 4px 4px 0;
+}
+
+.resize-handle:hover {
+    background: var(--primary-light);
+    opacity: 0.3;
+}
+
+.qty-input,
+.stock-manual-input,
+.remark-input {
+    width: 100%;
+    text-align: center;
+    padding: 7px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 0.76rem;
+    border: 1.5px solid #d9e1e8;
+    background: #fff;
+}
+
+.delete-item {
+    font-size: 1.1rem;
+    opacity: 0.5;
+    padding: 4px 8px;
+}
+
+.delete-item:hover {
+    opacity: 1;
+    color: #c0392b;
+    background: #fbe9e7;
+    border-radius: 50%;
+}
+
+/* ---------- 快速添加区 ---------- */
+.quick-add-area {
+    background: #f8fafd;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    border: 1px solid #d5e0ea;
+}
+
+.quick-results {
+    max-height: 260px;
+    overflow-y: auto;
+    margin-top: 12px;
+    border-radius: var(--radius);
+    background: #fff;
+    border: 1px solid #d5e0ea;
+}
+
+.quick-results table {
+    width: 100%;
+    font-size: 0.76rem;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.quick-results th {
+    background: #edf2f7;
+    padding: 8px 10px;
+    font-weight: 700;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #cbd6e3;
+    position: sticky;
+    top: 0;
+}
+
+.quick-results td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.quick-results tr:hover td {
+    background: #f2f7fb;
+}
+
+.add-quick-btn {
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 5px 14px;
+    border-radius: var(--radius-xl);
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid #b0c6da;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.add-quick-btn:hover {
+    background: var(--primary-light);
+    color: #fff;
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ---------- 批量操作区 ---------- */
+.batch-area {
+    background: #f8fafd;
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    border: 1px solid #d5e0ea;
+    padding: 16px 18px;
+}
+
+.batch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 12px;
+    align-items: end;
+}
+
+.batch-import-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #d5e0ea;
+}
+
+/* ---------- 分页 ---------- */
+.pagination-bar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.pagination-bar button {
+    background: #fff;
+    border: 1px solid #bccbd8;
+    border-radius: var(--radius-xl);
+    padding: 6px 14px;
+    font-size: 0.74rem;
+    color: var(--text-secondary);
+}
+
+.pagination-bar button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------- 申请单搜索条 ---------- */
+.req-search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 14px;
+}
+
+.req-search-bar .form-group {
+    flex: 2;
+    min-width: 200px;
+}
+
+/* ---------- 物料内联编辑按钮 ---------- */
+.delete-material {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #8fa8c0;
+    transition: var(--transition);
+    font-size: 1rem;
+    padding: 4px 8px;
+    border-radius: 50%;
+}
+
+.delete-material:hover {
+    color: #c0392b;
+    background: #fbe9e7;
+}
+
+.edit-material {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #8fa8c0;
+    transition: var(--transition);
+    font-size: 1rem;
+    padding: 4px 8px;
+    border-radius: 50%;
+}
+
+.edit-material:hover {
+    color: #1f6893;
+    background: #e8f0fe;
+}
+
+/* ---------- 内联编辑单元格 ----------
+   M-5 修复：.inline-edit 与 .edit-material 按钮共享编辑入口，
+   点击该单元格即打开编辑模态框。
+   通过 aria 属性与视觉提示让用户知道这是可点击的编辑入口。 */
+.inline-edit {
+    cursor: pointer;
+    border-bottom: none;
+    transition: var(--transition);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 4px;
+    border-radius: var(--radius-sm);
+    min-height: 1.4em;
+}
+
+.inline-edit:hover {
+    color: var(--primary);
+    background: #eef4fb;
+}
+
+.inline-edit:focus {
+    outline: 2px solid var(--primary-light);
+    outline-offset: -2px;
+}

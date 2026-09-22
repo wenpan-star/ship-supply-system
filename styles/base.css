@@ -1,0 +1,254 @@
+/* filename: styles/base.css */
+/* ========================================================================
+   船舶物料申请系统 · 基础重置与全局排版
+   只做：清零、字体、body、滚动条、通用表单元素
+   不包含：任何布局或组件样式
+   ======================================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background: var(--bg);
+    font-family: var(--font-stack);
+    padding: 20px 24px;
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 8px 10px;
+    }
+    input,
+    select,
+    button,
+    textarea {
+        font-size: 14px !important;
+    }
+}
+
+button,
+.add-btn,
+.delete-item,
+.delete-inv,
+.icon-btn {
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: var(--radius-xl);
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    font-family: var(--font-stack);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+button:active {
+    transform: scale(0.96);
+}
+
+button:hover {
+    filter: brightness(0.92);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+    box-shadow: none;
+}
+
+input,
+select,
+textarea {
+    border-radius: var(--radius-xl);
+    padding: 9px 16px;
+    border: 1.5px solid #bccbd8;
+    font-size: 0.84rem;
+    background: #f8fafc;
+    transition: var(--transition);
+    outline: none;
+    font-family: var(--font-stack);
+    color: var(--text);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 4px rgba(31, 105, 147, 0.12);
+    background: #fff;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #a0bcd0;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #7a9bb5;
+}
+
+/* ---------- 通用尺寸辅助类 ----------
+   以下类用于替代 index.html 中的内联宽度硬编码，
+   保持与 UI 组件的尺寸一致性。 */
+
+.req-serial-input {
+    width: 220px;
+}
+
+.applicant-select {
+    width: 150px;
+}
+
+.history-row {
+    margin-top: 12px;
+}
+
+.history-select-group {
+    min-width: 260px;
+}
+
+.history-select-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.history-select-wrapper select {
+    flex: 1;
+}
+
+.header-actions {
+    margin-left: auto;
+}
+
+.nav-tabs-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pwd-strength-container {
+    margin-top: -4px;
+    margin-bottom: 8px;
+}
+
+.auth-submit-btn {
+    background: #1f6893;
+    color: #ffffff;
+    padding: 12px;
+    width: 100%;
+    margin-top: 8px;
+    font-weight: 600;
+    border-radius: 40px;
+}
+
+.auth-status-bar {
+    margin-top: 18px;
+}
+
+.quick-add-main {
+    flex: 3;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.quick-add-input-group {
+    flex: 2;
+}
+
+.quick-add-field-group {
+    flex: 0 0 auto;
+}
+
+.full-width-input {
+    width: 100%;
+}
+
+.req-search-input-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.import-progress-area {
+    /* 由 JS 控制 display 显隐 */
+}
+
+.batch-area-header {
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+}
+
+.batch-area-header i {
+    color: #1f6893;
+}
+
+.batch-add-btn {
+    height: 42px;
+    margin-top: 4px;
+}
+
+.batch-import-hint {
+    font-size: 0.7rem;
+    background: #e5edf5;
+    padding: 5px 12px;
+    border-radius: 40px;
+}
+
+.batch-import-btn {
+    height: 36px;
+}
+
+.batch-import-columns-hint {
+    margin: 0;
+    padding: 3px 14px;
+    font-size: 0.7rem;
+}
+
+/* ---------- 无障碍焦点可见 ---------- */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--primary-light);
+    outline-offset: 2px;
+}

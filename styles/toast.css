@@ -1,0 +1,112 @@
+/* filename: styles/toast.css */
+/* ========================================================================
+   船舶物料申请系统 · 状态栏与全局提示
+   包含：状态栏、全局错误横幅、Toast 提示
+   ======================================================================== */
+
+.status-bar {
+    font-size: 0.68rem;
+    background: #e5edf5;
+    padding: 7px 18px;
+    border-radius: var(--radius-xl);
+    display: inline-block;
+    margin-top: 10px;
+    color: var(--primary-light);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    border: 1px solid #cbd6e3;
+}
+
+.status-bar.warning {
+    background: var(--accent-light);
+    color: #8b4f0e;
+    border-color: #efc47a;
+}
+
+.status-bar.success {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: #b8ddc8;
+}
+
+.status-bar.error {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-color: #e7bcbc;
+}
+
+/* ---------- 全局错误提示条 ---------- */
+.global-error-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--danger);
+    color: #fff;
+    text-align: center;
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    z-index: var(--z-global-error);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* ---------- Toast 提示（浮层） ----------
+   M-33 修复：默认短消息单行居中；长消息启用 .toast-multiline
+   允许换行，避免被省略号截断关键错误信息。 */
+.toast-message {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 59, 87, 0.92);
+    color: #fff;
+    padding: 12px 28px;
+    border-radius: var(--radius-xl);
+    font-size: 0.85rem;
+    z-index: var(--z-global-error);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+    max-width: 90vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toast-message.toast-visible {
+    opacity: 1;
+}
+
+.toast-message.toast-error {
+    background: rgba(158, 42, 43, 0.94);
+}
+
+.toast-message.toast-success {
+    background: rgba(27, 94, 58, 0.94);
+}
+
+/* M-33：长消息多行显示 */
+.toast-message.toast-multiline {
+    white-space: normal;
+    word-break: break-word;
+    text-align: left;
+    line-height: 1.5;
+    max-width: 80vw;
+    border-radius: var(--radius);
+    padding: 12px 22px;
+}
