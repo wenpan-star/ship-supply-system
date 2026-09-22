@@ -1,7 +1,7 @@
 // filename: src/preset.js
 // 船舶物料申请系统 · 内置预设物料库
 // 由 scripts/tools/generate-preset.js 自动生成
-// 生成时间：2026-09-22T06:41:00.220Z
+// 生成时间：2026-09-22T07:18:03.389Z
 
 export const PRESET_MATERIALS_EN = [
     {

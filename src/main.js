@@ -2,20 +2,24 @@
 // 船舶物料申请系统 · 应用入口
 // 唯一职责：初始化所有子系统并接线
 //
-// 【本轮修改】
-//   M-new-1 修复：applyImportedBackup 回收站合并语义。
-//     旧实现在 concat 后直接 slice(0, MAX_RECYCLE_BIN_SIZE)，
-//     保留了"现有条目在前、导入条目在后"的顺序，
-//     可能导致旧条目占满配额而丢弃导入中更高优（更新）的条目。
-//     现在只做 concat，交由 normalizeVault → normalizeRecycleBin
-//     统一执行"按 deletedAt 降序 + 去重 + 截断到容量上限"。
-//   其余修复保持不变：
-//     - Bug-1（申请单头双向同步启动注入）
-//     - M-1（导入回收站使用常量）
-//     - M-2（新建申请单文案）
-//     - M-6（上次查看 reqNo 恢复）
-//     - M-8（导入备份并发 IO）
-//     - m-21 / m-22（移除冗余动态 import）
+// 【本轮修复】
+//   修复"首次启动物料库为 0 条"的功能缺失：
+//     原实现只在 IndexedDB 中读取物料库，从未加载 src/preset.js，
+//     导致 build.bat 生成的预设数据完全未被使用。
+//     现在 loadInitialVault 会在"IndexedDB 物料库为空且未注入过预设"
+//     时，动态加载 src/preset.js 并注入到 Vault + 持久化到 IndexedDB。
+//
+//   关键设计：
+//     - 动态 import（await import('./preset.js')）：
+//         preset.js 可能不存在（用户未运行 build），静态 import 会直接
+//         抛错导致整个应用无法启动，因此必须动态加载并用 try/catch 兜底。
+//     - localStorage 标记（STORAGE_KEY_PRESET_INJECTED）：
+//         避免用户主动清空物料库后，重启又被自动重新填充。
+//     - 注入后立即持久化：
+//         避免下次启动重复注入。
+//
+// 【此前修复保持】
+//   Bug-1 / M-1 / M-2 / M-6 / M-8 / M-10 / M-new-1 / m-21 / m-22
 
 import {
     XLSX_CDN_URLS,
@@ -40,6 +44,7 @@ import {
     STORAGE_KEY_REQ_COLUMN_WIDTHS,
     STORAGE_KEY_MATERIAL_COLUMN_WIDTHS,
     STORAGE_KEY_LAST_VIEWED_REQ_NO,
+    STORAGE_KEY_PRESET_INJECTED,
     DEFAULT_REQ_PREFIX,
     DEFAULT_APPLICANT,
     DEFAULT_REQ_COLUMN_WIDTHS,
@@ -61,6 +66,7 @@ import {
     replaceVault,
 } from './core/facade.js';
 import {
+    saveChunkedData,
     loadChunkedData,
     secureGetItem,
     secureSetItem,
@@ -161,6 +167,12 @@ import {
 import {
     showConfirmDialog,
 } from './views/modals/confirm.js';
+import {
+    openConfirmInputModal,
+} from './views/modals/confirm-input.js';
+import {
+    openConfirmChoiceModal,
+} from './views/modals/confirm-choice.js';
 import {
     openEditMaterialModal,
 } from './views/modals/edit-material.js';
@@ -325,6 +337,71 @@ function writeLastViewedReqNo(reqNo) {
     }
 }
 
+// ==================== 预设物料库注入 ====================
+
+/**
+ * 检查预设物料库是否已注入过
+ *
+ * 目的：避免用户主动清空物料库后，重启应用又被自动填充预设数据。
+ * 使用 localStorage 标记（而非 vault.settings），因为它独立于加密数据，
+ * 不需要经过密钥派生即可读取，启动早期就能判定。
+ *
+ * @returns {boolean}
+ */
+function isPresetMaterialsInjected() {
+    try {
+        return localStorage.getItem(STORAGE_KEY_PRESET_INJECTED) === '1';
+    } catch (readError) {
+        console.warn('[main] 读取预设注入标记失败:', readError);
+        return false;
+    }
+}
+
+/**
+ * 标记预设物料库已注入
+ */
+function markPresetMaterialsInjected() {
+    try {
+        localStorage.setItem(STORAGE_KEY_PRESET_INJECTED, '1');
+    } catch (writeError) {
+        console.warn('[main] 写入预设注入标记失败:', writeError);
+    }
+}
+
+/**
+ * 动态加载 src/preset.js 中的预设物料库
+ *
+ * 【为什么用动态 import】
+ *   preset.js 由 build.bat 生成，可能不存在（用户未运行 build）。
+ *   静态 import 在模块缺失时会抛出 TypeError 并导致整个应用崩溃；
+ *   动态 import 可以用 try/catch 兜底，缺失时降级为空数组。
+ *
+ * 【返回值】
+ *   { en: Object[], zh: Object[] }
+ *   若 preset.js 不存在或加载失败，返回 { en: [], zh: [] }。
+ *
+ * @returns {Promise<{en: Object[], zh: Object[]}>}
+ */
+async function loadPresetMaterials() {
+    try {
+        const presetModule = await import('./preset.js');
+        const en = Array.isArray(presetModule.PRESET_MATERIALS_EN)
+            ? presetModule.PRESET_MATERIALS_EN
+            : [];
+        const zh = Array.isArray(presetModule.PRESET_MATERIALS_ZH)
+            ? presetModule.PRESET_MATERIALS_ZH
+            : [];
+        return { en: en, zh: zh };
+    } catch (presetError) {
+        console.warn(
+            '[main] preset.js 未找到或加载失败，跳过预设注入。' +
+            '若希望使用预设物料库，请先运行 build.bat 生成 src/preset.js。',
+            presetError
+        );
+        return { en: [], zh: [] };
+    }
+}
+
 async function loadInitialVault() {
     const vault = createEmptyVault();
     try {
@@ -334,6 +411,34 @@ async function loadInitialVault() {
         vault.materialsZh = Array.isArray(zhData) ? zhData : [];
     } catch (loadError) {
         console.error('[main] 物料库加载失败:', loadError);
+    }
+
+    // ---------- 预设物料库注入 ----------
+    // 触发条件：
+    //   1. IndexedDB 中两个语言库都为空（首次使用，或用户从未持久化过）
+    //   2. localStorage 中没有"已注入"标记（避免用户清空后重启被重新填充）
+    // 满足时，动态加载 preset.js 并注入 + 立即持久化。
+    if (vault.materialsEn.length === 0 &&
+        vault.materialsZh.length === 0 &&
+        !isPresetMaterialsInjected()) {
+        const preset = await loadPresetMaterials();
+        if (preset.en.length > 0 || preset.zh.length > 0) {
+            vault.materialsEn = preset.en;
+            vault.materialsZh = preset.zh;
+            markPresetMaterialsInjected();
+            try {
+                await saveChunkedData('en', preset.en);
+                await saveChunkedData('zh', preset.zh);
+                console.log(
+                    '[main] 预设物料库已注入并持久化：EN=' + preset.en.length +
+                    ' ZH=' + preset.zh.length
+                );
+            } catch (persistError) {
+                console.error('[main] 预设数据持久化失败:', persistError);
+            }
+        } else {
+            console.warn('[main] preset.js 中无有效数据，跳过预设注入。');
+        }
     }
 
     try {
@@ -692,22 +797,31 @@ function handleLoadApplication() {
 /**
  * 新建申请单
  *
- * 【M-2 修复】文案改为"覆盖"，与 newApplication 命令的实际语义一致。
- *   旧文案"打开该申请单"暗示加载行为，但实际执行的是创建空白申请单，
- *   原有条目会被替换。此处给出明确提示，避免用户误操作丢失数据。
+ * 【M-2 修复保持】文案改为"覆盖"，与 newApplication 命令的实际语义一致。
+ * 【M-10 修复】prompt() 替换为 openConfirmInputModal。
  */
 async function handleNewApplication() {
-    const newNo = prompt(
-        '新申请次序号',
-        DEFAULT_REQ_PREFIX + Date.now().toString().slice(-6)
-    );
-    if (!newNo) return;
+    const suggestedReqNo = DEFAULT_REQ_PREFIX + Date.now().toString().slice(-6);
+    const newNo = await openConfirmInputModal({
+        title: '新建申请单',
+        message: '请输入新的申请次序号。',
+        label: '申请次序号',
+        defaultValue: suggestedReqNo,
+        placeholder: DEFAULT_REQ_PREFIX + 'YYYYMMDD',
+        required: true,
+        requiredMessage: '申请次序号不能为空',
+        confirmText: '创建',
+        cancelText: '取消',
+    });
+    if (newNo === null) return;
+    const trimmedNewNo = String(newNo).trim();
+    if (!trimmedNewNo) return;
 
     try {
-        const existing = await secureGetItem('app', newNo, null);
+        const existing = await secureGetItem('app', trimmedNewNo, null);
         if (existing && typeof existing === 'object') {
             const overwrite = await showConfirmDialog(
-                '已存在申请单「' + newNo + '」（含 ' +
+                '已存在申请单「' + trimmedNewNo + '」（含 ' +
                 (existing.items ? existing.items.length : 0) +
                 ' 条物料）。\n\n继续将用新的空白申请单覆盖该数据。是否继续？'
             );
@@ -718,13 +832,13 @@ async function handleNewApplication() {
     }
 
     dispatch('newApplication', {
-        reqNo: newNo,
+        reqNo: trimmedNewNo,
         applicant: DEFAULT_APPLICANT,
         applyTime: getLocalDatetimeString(),
     });
     // 申请单头三输入框由 request-table.js 的 subscribe('application') 自动同步，
     // 无需手动赋值 reqNoInput.value。
-    updateStatusBar('📋 已创建 ' + newNo);
+    updateStatusBar('📋 已创建 ' + trimmedNewNo);
     await refreshHistoryList();
 }
 
@@ -1087,16 +1201,9 @@ async function handleImportBackup() {
 /**
  * 应用导入的备份数据
  *
- * 【M-new-1 修复】回收站合并语义。
- *   旧实现在 concat 后直接 slice(0, MAX_RECYCLE_BIN_SIZE)，
- *   保留了"现有条目在前、导入条目在后"的顺序，
- *   可能导致旧条目占满配额而丢弃导入中更高优（更新）的条目。
- *   现在只做 concat，交由 normalizeVault → normalizeRecycleBin
- *   统一执行"按 deletedAt 降序 + 去重 + 截断到容量上限"，
- *   与 deleteMaterial / cleanupExpiredRecycleBinItems 的契约保持一致。
- *
- * 【M-8 修复】申请单的读取/写入改为并发（Promise.all），
- *   减少 100 个申请单时累计的串行 IO 延迟。
+ * 【M-new-1 修复保持】回收站合并交由 normalizeVault → normalizeRecycleBin。
+ * 【M-8 修复保持】申请单的读取/写入改为并发（Promise.all）。
+ * 【M-10 修复】prompt() 替换为 openConfirmChoiceModal。
  */
 async function applyImportedBackup(rawData) {
     const vault = getVaultSnapshot();
@@ -1114,18 +1221,25 @@ async function applyImportedBackup(rawData) {
 
     let overwriteMode = false;
     if (enData.length || zhData.length) {
-        const modeChoice = prompt(
-            '物料库导入模式：\n请输入数字选择：\n1 = 覆盖对应语言库\n2 = 合并追加（存在重复时跳过）',
-            '2'
-        );
-        if (modeChoice === null) return;
-        const trimmedMode = modeChoice.trim();
-        if (trimmedMode === '1') overwriteMode = true;
-        else if (trimmedMode === '2') overwriteMode = false;
-        else {
-            alert('无效选择，操作取消');
-            return;
-        }
+        const modeChoice = await openConfirmChoiceModal({
+            title: '物料库导入模式',
+            message: '请选择如何处理备份中的物料库数据。',
+            choices: [
+                {
+                    value: 'overwrite',
+                    label: '覆盖对应语言库',
+                    description: '新数据完全替换原有数据。',
+                },
+                {
+                    value: 'merge',
+                    label: '合并追加',
+                    description: '保留原有数据，重复 IMPA 的条目跳过。',
+                },
+            ],
+            defaultIndex: 1,
+        });
+        if (!modeChoice) return;
+        overwriteMode = modeChoice.value === 'overwrite';
     }
 
     const mergeArray = function (current, incoming, isOverwrite) {
@@ -1198,7 +1312,7 @@ async function applyImportedBackup(rawData) {
         }
     }
 
-    // M-new-1 修复：不再在此处硬截断。
+    // M-new-1 修复保持：不再在此处硬截断。
     //   合并后的数组交给 normalizeVault → normalizeRecycleBin 处理，
     //   保证"按 deletedAt 降序 + 去重 + 截断到容量上限"的统一语义。
     const currentRecycleBin = Array.isArray(vault.recycleBin) ? vault.recycleBin : [];

@@ -6,6 +6,10 @@
 //
 // 【m-36 修复】resetAllData 现在无论 IndexedDB 删除是否成功，
 //   都会继续清理 localStorage 相关键。
+//
+// 【本轮修改】
+//   清理清单新增 STORAGE_KEY_PRESET_INJECTED：
+//     系统重置后，允许下次启动重新从 src/preset.js 注入预设物料库。
 
 import {
     dropDatabase,
@@ -33,6 +37,7 @@ import {
     STORAGE_KEY_QUICK_SEARCH_KEYWORD,
     STORAGE_KEY_QUICK_SEARCH_FIELD,
     STORAGE_KEY_LAST_VIEWED_REQ_NO,
+    STORAGE_KEY_PRESET_INJECTED,
 } from '../constants.js';
 
 /**
@@ -114,6 +119,8 @@ export function assertNotCorrupted(operationName) {
  * 清空 IndexedDB + localStorage 中的所有相关数据
  *
  * 【m-36 修复】即使 dropDatabase 抛异常，也继续清理 localStorage。
+ * 【本轮修改】清理清单新增 STORAGE_KEY_PRESET_INJECTED：
+ *   系统重置后，下次启动允许重新注入预设物料库。
  * @returns {Promise<void>}
  */
 export async function resetAllData() {
@@ -148,6 +155,7 @@ export async function resetAllData() {
         STORAGE_KEY_QUICK_SEARCH_KEYWORD,
         STORAGE_KEY_QUICK_SEARCH_FIELD,
         STORAGE_KEY_LAST_VIEWED_REQ_NO,
+        STORAGE_KEY_PRESET_INJECTED,
     ];
     for (let index = 0; index < keysToRemove.length; index++) {
         try {

@@ -28,6 +28,13 @@ export const STORAGE_KEY_QUICK_SEARCH_FIELD = 'ui_quickSearchField';
 // M-6 修复：记录"上次查看的申请单 reqNo"，启动时优先恢复
 export const STORAGE_KEY_LAST_VIEWED_REQ_NO = 'ui_lastViewedReqNo';
 
+// 预设物料库注入标记：
+//   首次启动时若 IndexedDB 物料库为空，则从 src/preset.js 注入预设数据。
+//   注入成功后置位此标记，避免用户主动清空物料库后重启又被自动填充。
+//   系统重置（resetAllData）时会一并清除此键。
+//   后缀 _v1：为未来预设数据结构变更预留，届时可改为 _v2 触发重新注入。
+export const STORAGE_KEY_PRESET_INJECTED = 'ship_material_preset_injected_v1';
+
 // 登录失败与锁定状态
 export const STORAGE_KEY_FAILED_ATTEMPTS = 'impa_failed_attempts';
 export const STORAGE_KEY_LOGIN_LOCKOUT_UNTIL = 'impa_login_lockout_until';
@@ -44,6 +51,7 @@ export const ENCRYPTION_PREFIX = 'v3::';
 
 // ==================== 元数据版本 ====================
 // localStorage 中主密码元数据的 schema 版本号。
+// 未来若元数据字段结构变化，可递增此版本以支持迁移。
 export const META_VERSION = 7;
 
 // ==================== 存储分块 ====================
@@ -51,6 +59,7 @@ export const CHUNK_SIZE = 5000;
 
 // ==================== 备份键前缀 ====================
 // persist.js 的密文备份前缀，用于密码变更前的原子性保护。
+// auth.js 与未来的回滚逻辑都基于此前缀。
 export const BACKUP_KEY_PREFIX = 'backup_';
 
 // ==================== 日志上限 ====================
